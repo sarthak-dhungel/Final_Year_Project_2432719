@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './signin.module.css';
+import { login } from "@/lib/auth";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -13,42 +14,21 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     setSuccess('');
-    
+
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      // 🔹 Call FastAPI login
+      const user = await login({ email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Sign in failed');
-      }
-
-      if (data.access_token) {
-        localStorage.setItem('authToken', data.access_token);
-      }
+      // 🔹 Store user locally (simple FYP approach)
+      localStorage.setItem("user", JSON.stringify(user));
 
       setSuccess('Welcome back! Redirecting...');
-      
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
-
+      router.push('/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to sign in. Please try again.');
     } finally {

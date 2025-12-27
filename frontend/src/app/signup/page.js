@@ -4,51 +4,28 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './signup.module.css';
+import { signup } from "@/lib/auth";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     setSuccess('');
-    
+
     try {
-      const response = await fetch(`${API_URL}/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Sign up failed');
-      }
-
-      if (data.access_token) {
-        localStorage.setItem('authToken', data.access_token);
-      }
+      await signup({ fullname, email, password });
 
       setSuccess('Account created successfully! Redirecting...');
-      
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
-
+      router.push('/signin');
     } catch (err) {
       setError(err.message || 'Failed to sign up. Please try again.');
     } finally {
@@ -110,6 +87,19 @@ export default function SignUpPage() {
                 {success}
               </div>
             )}
+
+            {/* ✅ Full Name field (ADDED) */}
+            <div className={styles.inputGroup}>
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={fullname}
+                onChange={(e) => setFullname(e.target.value)}
+                required
+                className={styles.inputField}
+                disabled={isLoading}
+              />
+            </div>
 
             <div className={styles.inputGroup}>
               <input

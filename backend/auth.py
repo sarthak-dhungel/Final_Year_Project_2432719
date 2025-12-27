@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from .database import db
-from .schemas import RegisterSchema, LoginSchema
+from database import db
+from schemas import RegisterSchema, LoginSchema
 from argon2 import PasswordHasher
 from bson import ObjectId
 

@@ -1,6 +1,6 @@
 import os
 from fastapi import APIRouter, UploadFile, File, Form
-from .database import db
+from database import db
 
 router = APIRouter()
 
