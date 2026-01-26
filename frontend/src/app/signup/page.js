@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './signup.module.css';
 import { signup } from "@/lib/auth";
+import { signIn } from "next-auth/react";
+
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -33,10 +35,16 @@ export default function SignUpPage() {
     }
   };
 
-  const handleSocialSignUp = (provider) => {
-    console.log(`Sign up with ${provider}`);
-    setError('Social authentication coming soon!');
-  };
+  const handleSocialSignUp = async (provider) => {
+  try {
+    await signIn(provider, {
+      callbackUrl: "/dashboard",
+    });
+  } catch (err) {
+    setError("Google sign-up failed. Please try again.");
+  }
+};
+
 
   return (
     <div className={styles.container}>

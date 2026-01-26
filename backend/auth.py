@@ -3,6 +3,8 @@ from database import db
 from schemas import RegisterSchema, LoginSchema
 from argon2 import PasswordHasher
 from bson import ObjectId
+from schemas import OAuthLoginSchema
+from datetime import datetime
 
 router = APIRouter()
 ph = PasswordHasher()
@@ -47,4 +49,35 @@ async def login(credentials: LoginSchema):
         "userId": str(user["_id"]),
         "fullname": user["fullname"],
         "role": user["role"]              #  now visible
+    }
+@router.post("/oauth-login")
+async def oauth_login(user: OAuthLoginSchema):
+    existing = await db.users.find_one({"email": user.email})
+
+    # If Google user logs in first time → create account
+    if not existing:
+        new_user = {
+            "fullname": user.fullname,
+            "email": user.email,
+            "password": None,            # OAuth users have no password
+            "provider": user.provider,   # "google"
+            "role": "farmer",             # default role
+            "created_at": datetime.utcnow()
+        }
+
+        result = await db.users.insert_one(new_user)
+
+        return {
+            "message": "OAuth user created",
+            "userId": str(result.inserted_id),
+            "fullname": new_user["fullname"],
+            "role": new_user["role"]
+        }
+
+    # If user already exists
+    return {
+        "message": "OAuth login successful",
+        "userId": str(existing["_id"]),
+        "fullname": existing["fullname"],
+        "role": existing["role"]
     }

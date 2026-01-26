@@ -30,3 +30,8 @@ class SoilReportSchema(BaseModel):
     moisture: float
     temperature: float
     recommendation: Optional[str] = None
+
+class OAuthLoginSchema(BaseModel):
+    email: EmailStr
+    fullname: str
+    provider: str   # "google"
