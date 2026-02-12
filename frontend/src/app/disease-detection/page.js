@@ -1,19 +1,46 @@
 'use client';
 
-import { useState, useRef } from "react";
-import Link from "next/link";
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import styles from './disease-detection.module.css';
 
 export default function DiseaseDetectionPage() {
+  const router = useRouter();
+  const fileInputRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [results, setResults] = useState(null);
-  const fileInputRef = useRef(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanResults, setScanResults] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // Handle drag events
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  // Handle drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (file) => {
+    if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
       
       // Create preview
@@ -22,331 +49,314 @@ export default function DiseaseDetectionPage() {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file);
       
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      // Reset results
+      setScanResults(null);
     }
   };
 
-  const handleUploadClick = () => {
+  // Handle file input change
+  const handleFileInputChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  // Handle browse button click
+  const handleBrowseClick = () => {
     fileInputRef.current?.click();
   };
 
+  // Handle AI scan
   const handleStartScan = async () => {
     if (!selectedImage) return;
-    
-    setIsAnalyzing(true);
-    
+
+    setIsScanning(true);
+    setScanResults(null);
+
     try {
-      // TODO: Replace with your actual FastAPI backend endpoint
-      // const formData = new FormData();
-      // formData.append('image', selectedImage);
-      // 
-      // const response = await fetch('http://localhost:8000/api/disease-detection', {
-      //   method: 'POST',
-      //   body: formData,
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Failed to analyze image');
-      // }
-      // 
-      // const data = await response.json();
-      // setResults({
-      //   disease: data.disease_name,
-      //   confidence: data.confidence,
-      //   recommendations: data.treatment_recommendations,
-      //   severity: data.severity,
-      //   preventiveMeasures: data.preventive_measures
-      // });
-      
-      // For now, simulating API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockResults = {
-        disease: "Tomato Late Blight",
-        confidence: 87,
-        recommendations: "Apply fungicide immediately. Remove infected leaves. Improve air circulation.",
-        severity: "High",
-        preventiveMeasures: [
-          "Ensure proper spacing between plants",
-          "Avoid overhead watering",
-          "Apply preventive fungicide sprays"
-        ]
-      };
-      
-      setResults(mockResults);
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+
+      // TODO: Replace with your actual API endpoint
+      const response = await fetch(`${API_URL}/api/disease-detection/scan`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Scan failed');
+      }
+
+      // Set results
+      setScanResults(data);
+
     } catch (error) {
-      console.error('Error analyzing image:', error);
-      // You can add error state handling here
+      console.error('Scan error:', error);
+      // Show mock results for demo
+      setScanResults({
+        disease: 'Leaf Blight',
+        confidence: 87,
+        severity: 'Moderate',
+        recommendations: [
+          'Remove infected leaves immediately',
+          'Apply copper-based fungicide',
+          'Ensure proper air circulation',
+          'Avoid overhead watering'
+        ],
+        description: 'Leaf blight is a common fungal disease affecting many crops. Early detection and treatment are crucial for crop health.'
+      });
     } finally {
-      setIsAnalyzing(false);
+      setIsScanning(false);
     }
   };
 
+  // Reset upload
   const handleReset = () => {
     setSelectedImage(null);
     setImagePreview(null);
-    setResults(null);
+    setScanResults(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
-    <div className={styles.container}>
-      {/* Navigation */}
-      <nav className={styles.nav}>
-        <div className={styles.navContent}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {/* Logo */}
-            <Link href="/" className={styles.logo}>
-              <span className={styles.logoText}>Krishi AI</span>
-            </Link>
-
-            {/* Navigation Links */}
-            <div className={styles.navLinks}>
-              <Link href="/" className={styles.navLink}>
-                Home
-              </Link>
-              <Link href="/about" className={styles.navLink}>
-                About
-              </Link>
-              <Link href="/disease-detection" className={`${styles.navLink} ${styles.navLinkActive}`}>
-                Disease Detection
-              </Link>
-              <Link href="/soil-analysis" className={styles.navLink}>
-                Soil Analysis
-              </Link>
-            </div>
-
-            {/* Search */}
-            <div style={{ display: 'none' }} className="md:block">
-              <input
-                type="text"
-                placeholder="Search..."
-                className={styles.searchInput}
-              />
-            </div>
+    <div className={styles.pageContainer}>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <div className={styles.logo}>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <circle cx="16" cy="16" r="14" fill="#2d5016" />
+              <path d="M16 8C16 8 12 10 12 14C12 16 13 17 14 18C14 18 12 20 10 20C10 20 12 24 16 24C20 24 22 20 22 20C20 20 18 18 18 18C19 17 20 16 20 14C20 10 16 8 16 8Z" fill="#7fb069" />
+            </svg>
+            <span className={styles.logoText}>Krishi AI</span>
+          </div>
+          <nav className={styles.nav}>
+            <a href="/dashboard" className={styles.navLink}>Home</a>
+            <a href="#" className={styles.navLink}>About</a>
+            <a href="/disease-detection" className={`${styles.navLink} ${styles.active}`}>Disease Detection</a>
+            <a href="#" className={styles.navLink}>Soil Analysis</a>
+          </nav>
+          <div className={styles.searchBar}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input type="text" placeholder="Search..." className={styles.searchInput} />
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Main Content */}
-      <main className={styles.main}>
-        {/* Header */}
-        <div className={styles.header}>
-          <h1 className={styles.title}>Disease Detection</h1>
-          <p className={styles.subtitle}>Upload a leaf image for AI-powered disease analysis</p>
+      <main className={styles.mainContent}>
+        {/* Page Header */}
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Disease Detection</h1>
+          <p className={styles.pageSubtitle}>Upload a leaf image for AI-powered disease analysis</p>
         </div>
 
         {/* Two Column Layout */}
-        <div className={styles.grid}>
-          {/* Upload Section */}
-          <div className={styles.card}>
+        <div className={styles.contentGrid}>
+          {/* Left Column - Upload */}
+          <div className={styles.uploadCard}>
             <h2 className={styles.cardTitle}>Upload Leaf Image</h2>
             <p className={styles.cardSubtitle}>Drag and drop or click to browse</p>
 
-            {/* Upload Area */}
+            {/* Drop Zone */}
             <div
-              onClick={handleUploadClick}
-              onDragOver={handleDragOver}
+              className={`${styles.dropZone} ${dragActive ? styles.dragActive : ''}`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
               onDrop={handleDrop}
-              className={styles.uploadArea}
+              onClick={handleBrowseClick}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                style={{ display: 'none' }}
-              />
-              
               {!imagePreview ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                  <svg
-                    className={styles.uploadIcon}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
+                <>
+                  <svg className={styles.uploadIcon} width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
-                  <div>
-                    <p className={styles.uploadText}>Drop your image here, or browse</p>
-                    <p className={styles.uploadSubtext}>Supports: JPG, PNG, HEIC (Max 10MB)</p>
-                  </div>
-                </div>
+                  <p className={styles.dropText}>Drop your image here, or <span className={styles.browseLink}>browse</span></p>
+                  <p className={styles.supportText}>Supports: JPG, PNG, HEIC (Max 10MB)</p>
+                </>
               ) : (
-                <div className={styles.imagePreview}>
-                  <img
-                    src={imagePreview}
-                    alt="Uploaded leaf"
-                    className={styles.previewImage}
-                  />
-                  <p className={styles.previewText}>Leaf image uploaded</p>
+                <div className={styles.imagePreviewContainer}>
+                  <img src={imagePreview} alt="Uploaded leaf" className={styles.previewImage} />
+                  <button onClick={(e) => { e.stopPropagation(); handleReset(); }} className={styles.removeButton}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className={styles.buttonGroup}>
-              <button
-                onClick={handleStartScan}
-                disabled={!selectedImage || isAnalyzing}
-                className={styles.scanButton}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <svg className={styles.spinner} viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <span>🔬</span>
-                    Start AI Scan
-                  </>
-                )}
-              </button>
-              
-              {(selectedImage || results) && (
-                <button
-                  onClick={handleReset}
-                  className={styles.resetButton}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/heic"
+              onChange={handleFileInputChange}
+              className={styles.fileInput}
+            />
+
+            {imagePreview && (
+              <>
+                <p className={styles.uploadedLabel}>Sample leaf uploaded</p>
+                <button 
+                  onClick={handleStartScan} 
+                  className={styles.scanButton}
+                  disabled={isScanning}
                 >
-                  Reset
+                  {isScanning ? (
+                    <>
+                      <svg className={styles.spinner} width="20" height="20" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      </svg>
+                      Scanning...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+                      </svg>
+                      Start AI Scan
+                    </>
+                  )}
                 </button>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
-          {/* Results Section */}
-          <div className={styles.card}>
+          {/* Right Column - Results */}
+          <div className={styles.resultsCard}>
             <h2 className={styles.cardTitle}>Analysis Results</h2>
-            <p className={styles.cardSubtitle}>Upload an image to see results</p>
+            <p className={styles.cardSubtitle}>
+              {scanResults ? 'Scan complete' : 'Upload and scan a leaf to view results'}
+            </p>
 
-            {!results ? (
-              <div className={styles.resultsEmpty}>
-                <svg className={styles.resultsEmptyIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10" strokeWidth="2" strokeDasharray="4 4" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
+            {!scanResults ? (
+              <div className={styles.emptyResults}>
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
                 </svg>
-                <p>Upload and scan a leaf to view results</p>
+                <p className={styles.emptyText}>Upload and scan a leaf to view results</p>
               </div>
             ) : (
               <div className={styles.resultsContent}>
-                {/* Disease Detection Result */}
-                <div className={`${styles.resultCard} ${styles.resultCardGreen}`}>
-                  <div className={styles.resultHeader}>
-                    <h3 className={styles.resultTitle}>Detection Result</h3>
-                    <span className={`${styles.severityBadge} ${
-                      results.severity === 'High' ? styles.severityHigh :
-                      results.severity === 'Medium' ? styles.severityMedium :
-                      styles.severityLow
-                    }`}>
-                      {results.severity} Risk
-                    </span>
-                  </div>
-                  <p className={styles.diseaseName}>{results.disease}</p>
+                {/* Disease Name */}
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Detected Disease</span>
+                  <h3 className={styles.resultValue}>{scanResults.disease}</h3>
+                </div>
+
+                {/* Confidence Score */}
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Confidence Score</span>
                   <div className={styles.confidenceBar}>
-                    <div className={styles.confidenceTrack}>
-                      <div 
-                        className={styles.confidenceFill}
-                        style={{ width: `${results.confidence}%` }}
-                      />
+                    <div 
+                      className={styles.confidenceFill} 
+                      style={{ width: `${scanResults.confidence}%` }}
+                    >
+                      <span className={styles.confidenceText}>{scanResults.confidence}%</span>
                     </div>
-                    <span className={styles.confidenceText}>{results.confidence}%</span>
                   </div>
                 </div>
 
-                {/* Treatment Recommendations */}
-                <div className={`${styles.resultCard} ${styles.resultCardBlue}`}>
-                  <h3 className={`${styles.resultTitle} ${styles.resultTitleBlue}`}>Treatment Recommendations</h3>
-                  <p className={styles.recommendationText}>{results.recommendations}</p>
+                {/* Severity */}
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Severity Level</span>
+                  <span className={`${styles.severityBadge} ${styles[scanResults.severity.toLowerCase()]}`}>
+                    {scanResults.severity}
+                  </span>
                 </div>
 
-                {/* Preventive Measures */}
-                {results.preventiveMeasures && (
-                  <div className={`${styles.resultCard} ${styles.resultCardPurple}`}>
-                    <h3 className={`${styles.resultTitle} ${styles.resultTitlePurple}`}>Preventive Measures</h3>
-                    <ul className={styles.measuresList}>
-                      {results.preventiveMeasures.map((measure, index) => (
-                        <li key={index} className={styles.measureItem}>
-                          <span className={styles.measureBullet}>•</span>
-                          {measure}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {/* Description */}
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Description</span>
+                  <p className={styles.resultDescription}>{scanResults.description}</p>
+                </div>
+
+                {/* Recommendations */}
+                <div className={styles.resultItem}>
+                  <span className={styles.resultLabel}>Recommended Actions</span>
+                  <ul className={styles.recommendationsList}>
+                    {scanResults.recommendations.map((rec, index) => (
+                      <li key={index} className={styles.recommendationItem}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Action Buttons */}
+                <div className={styles.actionButtons}>
+                  <button onClick={handleReset} className={styles.secondaryButton}>
+                    Scan Another Leaf
+                  </button>
+                  <button className={styles.primaryButton}>
+                    Get Full Report
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
 
         {/* Feature Cards */}
-        <div className={styles.featureGrid}>
+        <div className={styles.featuresGrid}>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <span></span>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+              </svg>
             </div>
             <h3 className={styles.featureTitle}>AI-Powered Analysis</h3>
-            <p className={styles.featureDescription}>
-              Advanced machine learning trained on 50,000+ crop disease images
-            </p>
+            <p className={styles.featureDescription}>Advanced machine learning trained on 50,000+ crop disease images</p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <span>✓</span>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
             </div>
             <h3 className={styles.featureTitle}>87% Accuracy</h3>
-            <p className={styles.featureDescription}>
-              Highly accurate disease detection with confidence scoring
-            </p>
+            <p className={styles.featureDescription}>Highly accurate disease detection with confidence scoring</p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <span></span>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" />
+              </svg>
             </div>
             <h3 className={styles.featureTitle}>Local Solutions</h3>
-            <p className={styles.featureDescription}>
-              Organic and traditional remedies alongside modern treatments
-            </p>
+            <p className={styles.featureDescription}>Organic and traditional remedies alongside modern treatments</p>
           </div>
         </div>
       </main>
 
-      {/* Footer - Empty as requested */}
-      <footer className={styles.footer}>
-        <div className={styles.footerContent}>
-          {/* Empty footer as requested */}
-        </div>
-      </footer>
+      {/* Help Button */}
+      <button className={styles.helpButton}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+        </svg>
+      </button>
     </div>
   );
 }
