@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from auth import router as auth_router
 from upload import router as upload_router
+from disease import router as disease_router
 
 app = FastAPI()
 
@@ -20,3 +21,4 @@ def home():
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(upload_router, prefix="/image")
+app.include_router(disease_router, prefix="/disease")
