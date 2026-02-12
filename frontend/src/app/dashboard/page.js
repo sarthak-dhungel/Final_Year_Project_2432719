@@ -3,33 +3,45 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
+import { useSession, signOut } from "next-auth/react";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userData, setUserData] = useState(null);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      router.push('/signin');
-      return;
+    if (status === "unauthenticated") {
+      router.push("/signin");
     }
 
-    // TODO: Fetch user data from API
-    // For now, using mock data
-    setUserData({
-      name: 'Farmer',
-      lastLogin: new Date().toLocaleDateString()
-    });
-  }, [router]);
+    if (status === "authenticated") {
+      setUserData({
+        name: session.user?.name || "Farmer",
+        lastLogin: new Date().toLocaleDateString(),
+      });
+    }
+  }, [status, router, session]);
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    router.push('/signin');
+    signOut({ callbackUrl: "/signin" });
   };
 
-  // Mock data for charts
+  if (status === "loading") {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #f5f0e8 0%, #e8dcc4 100%)'
+      }}>
+        <p style={{ fontSize: '18px', color: '#4a5568' }}>Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  // Mock data
   const soilNutrients = [
     { label: 'N', value: 68, max: 80 },
     { label: 'P', value: 45, max: 80 },
@@ -47,42 +59,36 @@ export default function DashboardPage() {
     { day: 'Sun', value: 55 }
   ];
 
+  const cropDistribution = [
+    { crop: 'Wheat', percentage: 35, color: '#2d5016' },
+    { crop: 'Rice', percentage: 30, color: '#d4a574' },
+    { crop: 'Corn', percentage: 20, color: '#7fb069' },
+    { crop: 'Others', percentage: 15, color: '#a8c896' }
+  ];
+
+  const tips = [
+    {
+      icon: '🌱',
+      title: 'Immediate Action Required',
+      description: 'Apply organic neem oil spray to affected leaves. Remove severely infected leaves to prevent spread.',
+      type: 'urgent'
+    },
+    {
+      icon: '💧',
+      title: 'Irrigation Recommendation',
+      description: 'Current moisture levels are optimal. Continue irrigation schedule with 2-inch watering every 3 days.',
+      type: 'info'
+    },
+    {
+      icon: '🌾',
+      title: 'Best Planting Window',
+      description: 'Based on weather forecast and soil conditions, ideal time for wheat planting is in the next 5-7 days.',
+      type: 'success'
+    }
+  ];
+
   return (
     <div className={styles.dashboardContainer}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.logo}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="14" fill="#2d5016" />
-              <path d="M16 8C16 8 12 10 12 14C12 16 13 17 14 18C14 18 12 20 10 20C10 20 12 24 16 24C20 24 22 20 22 20C20 20 18 18 18 18C19 17 20 16 20 14C20 10 16 8 16 8Z" fill="#7fb069" />
-            </svg>
-            <span className={styles.logoText}>Krishi AI</span>
-          </div>
-          <nav className={styles.nav}>
-            <a href="#" className={styles.navLink}>Home</a>
-            <a href="#" className={styles.navLink}>About</a>
-            <a href="#" className={styles.navLink}>Disease Detection</a>
-            <a href="#" className={styles.navLink}>Soil Analysis</a>
-          </nav>
-        </div>
-        <div className={styles.headerRight}>
-          <div className={styles.searchBar}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input type="text" placeholder="Search..." className={styles.searchInput} />
-          </div>
-          <button className={styles.callButton}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-            </svg>
-            Call Anytime
-          </button>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Page Title */}
@@ -226,9 +232,106 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Tips and Crop Distribution Section */}
+        <div className={styles.bottomSection}>
+          {/* Tips from Krishi AI */}
+          <div className={styles.tipsCard}>
+            <div className={styles.tipsHeader}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              <h3 className={styles.tipsTitle}>Tips from Krishi AI</h3>
+            </div>
+
+            <div className={styles.tipsList}>
+              {tips.map((tip, index) => (
+                <div key={index} className={`${styles.tipItem} ${styles[tip.type]}`}>
+                  <div className={styles.tipIcon}>{tip.icon}</div>
+                  <div className={styles.tipContent}>
+                    <h4 className={styles.tipTitle}>{tip.title}</h4>
+                    <p className={styles.tipDescription}>{tip.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className={styles.viewAllButton}>
+              View All Recommendations
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Crop Distribution */}
+          <div className={styles.cropCard}>
+            <h3 className={styles.cropTitle}>Crop Distribution</h3>
+            <p className={styles.cropSubtitle}>Your farm composition</p>
+
+            {/* Pie Chart */}
+            <div className={styles.pieChartContainer}>
+              <svg viewBox="0 0 200 200" className={styles.pieChart}>
+                {/* Calculate pie slices */}
+                {cropDistribution.map((crop, index) => {
+                  const startAngle = cropDistribution.slice(0, index).reduce((acc, c) => acc + (c.percentage * 3.6), 0);
+                  const endAngle = startAngle + (crop.percentage * 3.6);
+                  
+                  const x1 = 100 + 90 * Math.cos((startAngle - 90) * Math.PI / 180);
+                  const y1 = 100 + 90 * Math.sin((startAngle - 90) * Math.PI / 180);
+                  const x2 = 100 + 90 * Math.cos((endAngle - 90) * Math.PI / 180);
+                  const y2 = 100 + 90 * Math.sin((endAngle - 90) * Math.PI / 180);
+                  
+                  const largeArc = crop.percentage > 50 ? 1 : 0;
+                  
+                  const labelAngle = (startAngle + endAngle) / 2;
+                  const labelX = 100 + 60 * Math.cos((labelAngle - 90) * Math.PI / 180);
+                  const labelY = 100 + 60 * Math.sin((labelAngle - 90) * Math.PI / 180);
+                  
+                  return (
+                    <g key={index}>
+                      <path
+                        d={`M 100 100 L ${x1} ${y1} A 90 90 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                        fill={crop.color}
+                        stroke="white"
+                        strokeWidth="2"
+                      />
+                      <text
+                        x={labelX}
+                        y={labelY}
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="12"
+                        fontWeight="600"
+                      >
+                        {crop.percentage}%
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Legend */}
+            <div className={styles.cropLegend}>
+              {cropDistribution.map((crop, index) => (
+                <div key={index} className={styles.legendItem}>
+                  <div className={styles.legendColor} style={{ background: crop.color }}></div>
+                  <span className={styles.legendLabel}>{crop.crop}</span>
+                  <span className={styles.legendValue}>{crop.percentage}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Help Button */}
+      <button className={styles.helpButton}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+        </svg>
+      </button>
     </div>
   );
 }
