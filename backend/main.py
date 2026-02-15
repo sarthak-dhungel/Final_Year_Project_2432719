@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from auth import router as auth_router
 from upload import router as upload_router
 from password_reset import router as password_reset_router
+from soil_analysis import router as soil_router
 
 app = FastAPI()
 
@@ -21,4 +22,5 @@ def home():
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(upload_router, prefix="/image")
-app.include_router(password_reset_router, prefix="/auth")  # NEW
+app.include_router(password_reset_router, prefix="/auth")
+app.include_router(soil_router, prefix="/soil")
