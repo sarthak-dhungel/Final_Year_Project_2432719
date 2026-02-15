@@ -7,8 +7,8 @@ import Footer from "@/components/Footer/Footer";
 export default function LayoutChrome({ children }) {
   const pathname = usePathname();
 
-  // Hide navbar + footer ONLY on splash screen
-  const hideChrome = pathname === "/";
+  // Hide navbar + footer ONLY on these pages 
+   const hideChrome = pathname === "/" || pathname === "/forgot-password";;
 
   return (
     <>

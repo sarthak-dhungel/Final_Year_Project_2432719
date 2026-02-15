@@ -115,13 +115,7 @@ export default function SplashScreen() {
 
   const handleExploreClick = () => {
     localStorage.setItem('hasVisitedKrishiAI', 'true');
-
-    document.body.style.transform = 'translateX(-100%)';
-    document.body.style.transition = 'transform 0.6s ease-in-out';
-
-    setTimeout(() => {
-      router.push('/signup');
-    }, 600);
+    router.push('/signup');
   };
 
   if (status === 'loading') {
@@ -157,24 +151,24 @@ export default function SplashScreen() {
 
       {/* Background Image (STATIC, CRISPY) */}
       <div className="fixed inset-0 w-full h-screen -z-10">
-  <Image
-    src="/farmer-hero.jpg"
-    alt="Farmer in rice field"
-    fill
-    priority
-    quality={100}
-    sizes="100vw"
-    className="object-cover"
-    style={{
-      objectPosition: "60%",
-      transform: "translateZ(0)",
-      filter: "brightness(0.74) contrast(1.15) saturate(0.9)"
-    }}
-  />
+        <Image
+          src="/farmer-hero.jpg"
+          alt="Farmer in rice field"
+          fill
+          priority
+          quality={100}
+          sizes="100vw"
+          className="object-cover"
+          style={{
+            objectPosition: "60%",
+            transform: "translateZ(0)",
+            filter: "brightness(0.74) contrast(1.15) saturate(0.9)"
+          }}
+        />
 
-  {/* Very light overlay – do NOT increase this */}
-  <div className="absolute inset-0 bg-black/15" />
-</div>
+        {/* Very light overlay – do NOT increase this */}
+        <div className="absolute inset-0 bg-black/15" />
+      </div>
 
       {/* Floating Particles */}
       {mounted && particles.map(particle => (

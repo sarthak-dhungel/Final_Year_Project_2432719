@@ -125,32 +125,6 @@ export default function DiseaseDetectionPage() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.logo}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="14" fill="#2d5016" />
-              <path d="M16 8C16 8 12 10 12 14C12 16 13 17 14 18C14 18 12 20 10 20C10 20 12 24 16 24C20 24 22 20 22 20C20 20 18 18 18 18C19 17 20 16 20 14C20 10 16 8 16 8Z" fill="#7fb069" />
-            </svg>
-            <span className={styles.logoText}>Krishi AI</span>
-          </div>
-          <nav className={styles.nav}>
-            <a href="/dashboard" className={styles.navLink}>Home</a>
-            <a href="#" className={styles.navLink}>About</a>
-            <a href="/disease-detection" className={`${styles.navLink} ${styles.active}`}>Disease Detection</a>
-            <a href="#" className={styles.navLink}>Soil Analysis</a>
-          </nav>
-          <div className={styles.searchBar}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input type="text" placeholder="Search..." className={styles.searchInput} />
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Page Header */}

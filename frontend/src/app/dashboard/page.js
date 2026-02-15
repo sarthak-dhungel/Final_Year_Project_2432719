@@ -9,15 +9,8 @@ export default function DashboardPage() {
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      router.push('/signin');
-      return;
-    }
-
-    // TODO: Fetch user data from API
-    // For now, using mock data
+    // NO AUTH CHECK - Removed for now
+    // Just load mock data
     setUserData({
       name: 'Farmer',
       lastLogin: new Date().toLocaleDateString()
@@ -26,6 +19,7 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
     router.push('/signin');
   };
 
@@ -49,40 +43,6 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.dashboardContainer}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.logo}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="14" fill="#2d5016" />
-              <path d="M16 8C16 8 12 10 12 14C12 16 13 17 14 18C14 18 12 20 10 20C10 20 12 24 16 24C20 24 22 20 22 20C20 20 18 18 18 18C19 17 20 16 20 14C20 10 16 8 16 8Z" fill="#7fb069" />
-            </svg>
-            <span className={styles.logoText}>Krishi AI</span>
-          </div>
-          <nav className={styles.nav}>
-            <a href="#" className={styles.navLink}>Home</a>
-            <a href="#" className={styles.navLink}>About</a>
-            <a href="#" className={styles.navLink}>Disease Detection</a>
-            <a href="#" className={styles.navLink}>Soil Analysis</a>
-          </nav>
-        </div>
-        <div className={styles.headerRight}>
-          <div className={styles.searchBar}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input type="text" placeholder="Search..." className={styles.searchInput} />
-          </div>
-          <button className={styles.callButton}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-            </svg>
-            Call Anytime
-          </button>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Page Title */}
@@ -227,8 +187,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
-
-      {/* Help Button */}
     </div>
   );
 }
