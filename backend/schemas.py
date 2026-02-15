@@ -35,3 +35,16 @@ class OAuthLoginSchema(BaseModel):
     email: EmailStr
     fullname: str
     provider: str   # "google"
+
+# NEW: Password Reset Schemas
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+
+class VerifyOTPSchema(BaseModel):
+    email: EmailStr
+    otp: str
+
+class ResetPasswordSchema(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
