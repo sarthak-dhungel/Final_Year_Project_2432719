@@ -67,7 +67,7 @@ export default function DiseaseDetectionPage() {
     fileInputRef.current?.click();
   };
 
-  // Handle AI scan
+  // Handle AI scan - FIXED VERSION
   const handleStartScan = async () => {
     if (!selectedImage) return;
 
@@ -76,10 +76,10 @@ export default function DiseaseDetectionPage() {
 
     try {
       const formData = new FormData();
-      formData.append('image', selectedImage);
+      formData.append('file', selectedImage); // ← FIXED: Changed from 'image' to 'file'
 
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch(`${API_URL}/api/disease-detection/scan`, {
+      // FIXED: Correct endpoint /api/ai/predict
+      const response = await fetch(`${API_URL}/api/ai/predict`, {
         method: 'POST',
         body: formData,
       });
@@ -90,24 +90,26 @@ export default function DiseaseDetectionPage() {
         throw new Error(data.detail || 'Scan failed');
       }
 
-      // Set results
-      setScanResults(data);
+      console.log('API Response:', data); // Debug log
+
+      // Map backend response to frontend format
+      const primaryPrediction = data.predictions[0];
+      
+      setScanResults({
+        disease: primaryPrediction.disease.replace(/_/g, ' '), // Replace underscores with spaces
+        confidence: primaryPrediction.confidence,
+        severity: primaryPrediction.severity,
+        recommendations: [
+          primaryPrediction.remedy?.organic_treatment,
+          primaryPrediction.remedy?.chemical_treatment,
+          primaryPrediction.remedy?.prevention
+        ].filter(Boolean), // Remove empty values
+        description: primaryPrediction.remedy?.symptoms || 'No description available'
+      });
 
     } catch (error) {
       console.error('Scan error:', error);
-      // Show mock results for demo
-      setScanResults({
-        disease: 'Leaf Blight',
-        confidence: 87,
-        severity: 'Moderate',
-        recommendations: [
-          'Remove infected leaves immediately',
-          'Apply copper-based fungicide',
-          'Ensure proper air circulation',
-          'Avoid overhead watering'
-        ],
-        description: 'Leaf blight is a common fungal disease affecting many crops. Early detection and treatment are crucial for crop health.'
-      });
+      alert(`Scan failed: ${error.message}`);
     } finally {
       setIsScanning(false);
     }
