@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import styles from './signin.module.css';
-import { login } from "@/lib/auth";
-import { signIn } from "next-auth/react";
-
+import styles from '../signup/signup.module.css';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -14,40 +11,52 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  // Admin shortcut listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // F12 for admin access
+      if (e.key === 'F12') {
+        e.preventDefault();
+        router.push('/admin');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    setSuccess('');
 
     try {
-      // 🔹 Call FastAPI login
-      const user = await login({ email, password });
+      const response = await fetch(`${API_URL}/auth/signin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // 🔹 Store user locally (simple FYP approach)
-      localStorage.setItem("user", JSON.stringify(user));
+      const data = await response.json();
 
-      setSuccess('Welcome back! Redirecting...');
+      if (!response.ok) {
+        throw new Error(data.detail || 'Sign in failed');
+      }
+
+      // Store token
+      localStorage.setItem('authToken', data.access_token);
+      
+      // Redirect to dashboard
       router.push('/dashboard');
     } catch (err) {
-      setError(err.message || 'Failed to sign in. Please try again.');
+      setError(err.message || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleSocialSignIn = async (provider) => {
-  try {
-    await signIn(provider, {
-      callbackUrl: "/dashboard",
-    });
-  } catch (err) {
-    setError("Google sign-in failed. Please try again.");
-  }
-};
-
 
   return (
     <div className={styles.container}>
@@ -64,8 +73,8 @@ export default function SignInPage() {
 
       <button 
         className={styles.backButton}
-        onClick={() => router.push('/signup')}
-        aria-label="Go back to sign up"
+        onClick={() => router.back()}
+        aria-label="Go back"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -75,6 +84,10 @@ export default function SignInPage() {
       <div className={styles.card}>
         <div className={styles.cardContent}>
           <h1 className={styles.title}>SIGN IN</h1>
+          
+          <p className={styles.loginText}>
+            New here? <a href="/signup" className={styles.loginLink}>Create an account</a>
+          </p>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             {error && (
@@ -83,15 +96,6 @@ export default function SignInPage() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 {error}
-              </div>
-            )}
-
-            {success && (
-              <div className={styles.successMessage}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                {success}
               </div>
             )}
 
@@ -110,19 +114,14 @@ export default function SignInPage() {
             <div className={styles.inputGroup}>
               <input
                 type="password"
-                placeholder="password"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
                 className={styles.inputField}
                 disabled={isLoading}
               />
             </div>
-
-            <a href="/forgot-password" className={styles.forgotPassword}>
-              forgot password?
-            </a>
 
             <button 
               type="submit" 
@@ -138,9 +137,13 @@ export default function SignInPage() {
                   Signing In...
                 </span>
               ) : (
-                'Sign in'
+                'Sign In'
               )}
             </button>
+
+            <a href="/forgot-password" className={styles.forgotPassword}>
+              Forgot Password?
+            </a>
           </form>
 
           <div className={styles.divider}>
@@ -152,7 +155,6 @@ export default function SignInPage() {
           <div className={styles.socialButtons}>
             <button 
               className={styles.socialButton}
-              onClick={() => handleSocialSignIn('facebook')}
               aria-label="Sign in with Facebook"
               disabled={isLoading}
             >
@@ -163,7 +165,6 @@ export default function SignInPage() {
 
             <button 
               className={styles.socialButton}
-              onClick={() => handleSocialSignIn('google')}
               aria-label="Sign in with Google"
               disabled={isLoading}
             >
@@ -172,6 +173,16 @@ export default function SignInPage() {
               </svg>
             </button>
           </div>
+
+          <p style={{ 
+            fontSize: '10px', 
+            color: '#9ca3af', 
+            textAlign: 'center', 
+            marginTop: '20px',
+            fontStyle: 'italic'
+          }}>
+             Admin? Press F12
+          </p>
         </div>
       </div>
     </div>

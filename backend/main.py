@@ -7,7 +7,7 @@ from password_reset import router as password_reset_router
 from soil_analysis import router as soil_router
 from ai_predict import router as ai_router
 
-app = FastAPI()
+app = FastAPI() 
 
 # Add CORS middleware
 app.add_middleware(
