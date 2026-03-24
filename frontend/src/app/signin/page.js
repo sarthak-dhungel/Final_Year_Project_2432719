@@ -1,53 +1,85 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import styles from './signin.module.css';
-import { login } from "@/lib/auth";
-import { signIn } from "next-auth/react";
-
+import styles from '../signup/signup.module.css';
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  // If user is already logged in, send them straight to dashboard
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/dashboard');
+    }
+  }, [status, router]);
+
+  // Show error from NextAuth redirect (e.g. OAuth errors)
+  useEffect(() => {
+    const err = searchParams.get('error');
+    if (err) {
+      if (err === 'OAuthAccountNotLinked') {
+        setError('This email is already registered with a different sign-in method.');
+      } else if (err === 'CredentialsSignin') {
+        setError('Invalid email or password.');
+      } else {
+        setError('Sign in failed. Please try again.');
+      }
+    }
+  }, [searchParams]);
+
+  // Admin shortcut
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault();
+        router.push('/admin');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    setSuccess('');
 
-    try {
-      // 🔹 Call FastAPI login
-      const user = await login({ email, password });
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
 
-      // 🔹 Store user locally (simple FYP approach)
-      localStorage.setItem("user", JSON.stringify(user));
+    setIsLoading(false);
 
-      setSuccess('Welcome back! Redirecting...');
+    if (result?.error) {
+      // NextAuth wraps the error message — clean it up
+      const msg = result.error;
+      if (msg === 'CredentialsSignin') {
+        setError('Invalid email or password.');
+      } else {
+        setError(msg);
+      }
+    } else {
       router.push('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Failed to sign in. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleSocialSignIn = async (provider) => {
-  try {
-    await signIn(provider, {
-      callbackUrl: "/dashboard",
-    });
-  } catch (err) {
-    setError("Google sign-in failed. Please try again.");
-  }
-};
+  const handleGoogleSignIn = () => {
+    signIn('google', { callbackUrl: '/dashboard' });
+  };
 
+  if (status === 'loading') return null;
 
   return (
     <div className={styles.container}>
@@ -62,10 +94,10 @@ export default function SignInPage() {
         />
       </div>
 
-      <button 
+      <button
         className={styles.backButton}
-        onClick={() => router.push('/signup')}
-        aria-label="Go back to sign up"
+        onClick={() => router.back()}
+        aria-label="Go back"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -76,6 +108,10 @@ export default function SignInPage() {
         <div className={styles.cardContent}>
           <h1 className={styles.title}>SIGN IN</h1>
 
+          <p className={styles.loginText}>
+            New here? <a href="/signup" className={styles.loginLink}>Create an account</a>
+          </p>
+
           <form onSubmit={handleSubmit} className={styles.form}>
             {error && (
               <div className={styles.errorMessage}>
@@ -83,15 +119,6 @@ export default function SignInPage() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 {error}
-              </div>
-            )}
-
-            {success && (
-              <div className={styles.successMessage}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                {success}
               </div>
             )}
 
@@ -107,25 +134,56 @@ export default function SignInPage() {
               />
             </div>
 
-            <div className={styles.inputGroup}>
+            {/* Password field with eye toggle */}
+            <div className={styles.inputGroup} style={{ position: 'relative' }}>
               <input
-                type="password"
-                placeholder="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
                 className={styles.inputField}
                 disabled={isLoading}
+                style={{ paddingRight: '44px' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  color: '#6b7280',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  // Eye-off icon
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  // Eye icon
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
             </div>
 
-            <a href="/forgot-password" className={styles.forgotPassword}>
-              forgot password?
-            </a>
-
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={styles.submitButton}
               disabled={isLoading}
             >
@@ -138,9 +196,13 @@ export default function SignInPage() {
                   Signing In...
                 </span>
               ) : (
-                'Sign in'
+                'Sign In'
               )}
             </button>
+
+            <a href="/forgot-password" className={styles.forgotPassword}>
+              Forgot Password?
+            </a>
           </form>
 
           <div className={styles.divider}>
@@ -150,21 +212,10 @@ export default function SignInPage() {
           </div>
 
           <div className={styles.socialButtons}>
-            <button 
+            <button
               className={styles.socialButton}
-              onClick={() => handleSocialSignIn('facebook')}
-              aria-label="Sign in with Facebook"
-              disabled={isLoading}
-            >
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
-                <path d="M16 2C8.268 2 2 8.268 2 16c0 7.015 5.158 12.834 11.9 13.847V19.67h-3.58v-3.67h3.58v-2.8c0-3.533 2.104-5.484 5.324-5.484 1.542 0 3.156.276 3.156.276v3.468h-1.778c-1.752 0-2.298 1.087-2.298 2.202V16h3.913l-.626 3.67h-3.287v10.177C24.842 28.834 30 23.015 30 16c0-7.732-6.268-14-14-14z"/>
-              </svg>
-            </button>
-
-            <button 
-              className={styles.socialButton}
-              onClick={() => handleSocialSignIn('google')}
               aria-label="Sign in with Google"
+              onClick={handleGoogleSignIn}
               disabled={isLoading}
             >
               <svg width="32" height="32" viewBox="-2 -2 24 24" fill="currentColor">
@@ -172,6 +223,16 @@ export default function SignInPage() {
               </svg>
             </button>
           </div>
+
+          <p style={{
+            fontSize: '10px',
+            color: '#9ca3af',
+            textAlign: 'center',
+            marginTop: '20px',
+            fontStyle: 'italic'
+          }}>
+            Admin? Press F12
+          </p>
         </div>
       </div>
     </div>

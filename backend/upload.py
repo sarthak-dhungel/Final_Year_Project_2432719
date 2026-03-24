@@ -1,6 +1,7 @@
 import os
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from database import db
+from datetime import datetime
 
 router = APIRouter()
 
@@ -13,21 +14,37 @@ async def upload_image(
     userId: str = Form(...),
     image: UploadFile = File(...)
 ):
-    file_path = os.path.join(UPLOAD_DIR, image.filename)
+    try:
+        # Generate unique filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_extension = os.path.splitext(image.filename)[1]
+        unique_filename = f"{timestamp}_{image.filename}"
+        file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-    with open(file_path, "wb") as buffer:
-        buffer.write(await image.read())
+        # Save file
+        with open(file_path, "wb") as buffer:
+            content = await image.read()
+            buffer.write(content)
 
-    saved = await db.images.insert_one({
-        "userId": userId,
-        "imageUrl": file_path,
-        "disease": "Pending",
-        "confidence": 0.0
-    })
+        # Store relative path (not absolute) for portability
+        relative_path = f"uploads/{unique_filename}"
 
-    return {
-        "message": "Image uploaded successfully ",
-        "filename": image.filename,
-        "id": str(saved.inserted_id)
-    }
+        # Insert into database with proper field types
+        saved = await db.images.insert_one({
+            "userId": userId,
+            "imageUrl": relative_path,
+            "disease": "Pending",
+            "confidence": 0.0,
+            "uploadedAt": datetime.now(),
+            "status": "uploaded"
+        })
 
+        return {
+            "message": "Image uploaded successfully",
+            "filename": unique_filename,
+            "id": str(saved.inserted_id),
+            "imageUrl": relative_path
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

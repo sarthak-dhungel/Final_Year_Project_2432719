@@ -9,7 +9,7 @@ export default function Header() {
   const pathname = usePathname();
   
   // Don't show header on these pages
-  const noHeaderPages = ['/signin', '/signup', '/auth/signin', '/auth/signup'];
+  const noHeaderPages = ['/signin', '/signup', '/auth/signin', '/auth/signup', '/admin'];
   
   if (noHeaderPages.includes(pathname)) {
     return null;

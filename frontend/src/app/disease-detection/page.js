@@ -2,145 +2,146 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import styles from './disease-detection.module.css';
 
 export default function DiseaseDetectionPage() {
   const router = useRouter();
+  const { session, status } = useAuthGuard();
+
   const fileInputRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [activeTab, setActiveTab] = useState('symptoms');
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-  // Handle drag events
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
   };
 
-  // Handle drop
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
   };
 
-  // Handle file selection
   const handleFileSelect = (file) => {
     if (file && file.type.startsWith('image/')) {
       setSelectedImage(file);
-      
-      // Create preview
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
+      reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
-      
-      // Reset results
       setScanResults(null);
     }
   };
 
-  // Handle file input change
   const handleFileInputChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files[0]);
-    }
+    if (e.target.files && e.target.files[0]) handleFileSelect(e.target.files[0]);
   };
 
-  // Handle browse button click
-  const handleBrowseClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleBrowseClick = () => fileInputRef.current?.click();
 
-  // Handle AI scan
   const handleStartScan = async () => {
     if (!selectedImage) return;
-
     setIsScanning(true);
     setScanResults(null);
 
     try {
       const formData = new FormData();
-      formData.append('image', selectedImage);
+      formData.append('file', selectedImage);
 
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch(`${API_URL}/api/disease-detection/scan`, {
+      const headers = {};
+      if (session?.user?.id) headers['X-User-Id'] = session.user.id;
+
+      const response = await fetch(`${API_URL}/api/ai/predict`, {
         method: 'POST',
+        headers,
         body: formData,
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Scan failed');
-      }
-
-      // Set results
+      if (!response.ok) throw new Error(data.detail || 'Scan failed');
       setScanResults(data);
-
+      setActiveTab('symptoms');
     } catch (error) {
       console.error('Scan error:', error);
-      // Show mock results for demo
-      setScanResults({
-        disease: 'Leaf Blight',
-        confidence: 87,
-        severity: 'Moderate',
-        recommendations: [
-          'Remove infected leaves immediately',
-          'Apply copper-based fungicide',
-          'Ensure proper air circulation',
-          'Avoid overhead watering'
-        ],
-        description: 'Leaf blight is a common fungal disease affecting many crops. Early detection and treatment are crucial for crop health.'
-      });
+      setScanResults({ error: error.message });
     } finally {
       setIsScanning(false);
     }
   };
 
-  // Reset upload
   const handleReset = () => {
     setSelectedImage(null);
     setImagePreview(null);
     setScanResults(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  if (status === 'loading') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <svg style={{ animation: 'spin 1s linear infinite' }} width="40" height="40" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" fill="none" />
+        </svg>
+      </div>
+    );
+  }
+
+  const topPrediction = scanResults?.predictions?.[0];
+  const remedy = topPrediction?.remedy;
+
+  // Safely render a list — handles both arrays and undefined
+  const renderList = (items) => {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return <p style={{ color: '#6b7280' }}>No data available.</p>;
+    }
+    return (
+      <ul style={{ paddingLeft: '16px', margin: 0 }}>
+        {items.map((item, i) => (
+          <li key={i} style={{ marginBottom: '6px' }}>{item}</li>
+        ))}
+      </ul>
+    );
+  };
+
+  const renderTabContent = () => {
+    if (!remedy) return <p style={{ color: '#6b7280' }}>No remedy data available for this disease.</p>;
+
+    // disease_remedies.py uses: symptoms (array), organic_treatments (array),
+    // chemical_treatments (array), prevention (array)
+    switch (activeTab) {
+      case 'symptoms':    return renderList(remedy.symptoms);
+      case 'organic':     return renderList(remedy.organic_treatments);
+      case 'chemical':    return renderList(remedy.chemical_treatments);
+      case 'prevention':  return renderList(remedy.prevention);
+      default:            return null;
     }
   };
 
   return (
     <div className={styles.pageContainer}>
-      {/* Main Content */}
       <main className={styles.mainContent}>
-        {/* Page Header */}
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>Disease Detection</h1>
           <p className={styles.pageSubtitle}>Upload a leaf image for AI-powered disease analysis</p>
         </div>
 
-        {/* Two Column Layout */}
         <div className={styles.contentGrid}>
           {/* Left Column - Upload */}
           <div className={styles.uploadCard}>
             <h2 className={styles.cardTitle}>Upload Leaf Image</h2>
             <p className={styles.cardSubtitle}>Drag and drop or click to browse</p>
 
-            {/* Drop Zone */}
             <div
               className={`${styles.dropZone} ${dragActive ? styles.dragActive : ''}`}
               onDragEnter={handleDrag}
@@ -182,12 +183,8 @@ export default function DiseaseDetectionPage() {
 
             {imagePreview && (
               <>
-                <p className={styles.uploadedLabel}>Sample leaf uploaded</p>
-                <button 
-                  onClick={handleStartScan} 
-                  className={styles.scanButton}
-                  disabled={isScanning}
-                >
+                <p className={styles.uploadedLabel}>Leaf image ready</p>
+                <button onClick={handleStartScan} className={styles.scanButton} disabled={isScanning}>
                   {isScanning ? (
                     <>
                       <svg className={styles.spinner} width="20" height="20" viewBox="0 0 24 24">
@@ -226,63 +223,91 @@ export default function DiseaseDetectionPage() {
                 </svg>
                 <p className={styles.emptyText}>Upload and scan a leaf to view results</p>
               </div>
+            ) : scanResults.error ? (
+              <div style={{ color: '#ef4444', padding: '16px', background: '#fef2f2', borderRadius: '8px' }}>
+                <strong>Error:</strong> {scanResults.error}
+              </div>
             ) : (
               <div className={styles.resultsContent}>
-                {/* Disease Name */}
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Detected Disease</span>
-                  <h3 className={styles.resultValue}>{scanResults.disease}</h3>
-                </div>
-
-                {/* Confidence Score */}
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Confidence Score</span>
-                  <div className={styles.confidenceBar}>
-                    <div 
-                      className={styles.confidenceFill} 
-                      style={{ width: `${scanResults.confidence}%` }}
-                    >
-                      <span className={styles.confidenceText}>{scanResults.confidence}%</span>
+                {topPrediction && (
+                  <>
+                    {/* Disease name */}
+                    <div className={styles.resultItem}>
+                      <span className={styles.resultLabel}>Detected Disease</span>
+                      <h3 className={styles.resultValue}>
+                        {remedy?.name || topPrediction.label?.replace(/___/g, ' - ').replace(/_/g, ' ')}
+                      </h3>
+                      {remedy?.name_nepali && (
+                        <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '2px' }}>{remedy.name_nepali}</p>
+                      )}
                     </div>
-                  </div>
-                </div>
 
-                {/* Severity */}
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Severity Level</span>
-                  <span className={`${styles.severityBadge} ${styles[scanResults.severity.toLowerCase()]}`}>
-                    {scanResults.severity}
-                  </span>
-                </div>
+                    {/* Confidence */}
+                    <div className={styles.resultItem}>
+                      <span className={styles.resultLabel}>Confidence Score</span>
+                      <div className={styles.confidenceBar}>
+                        <div
+                          className={styles.confidenceFill}
+                          style={{ width: `${(topPrediction.prob * 100).toFixed(1)}%` }}
+                        >
+                          <span className={styles.confidenceText}>{(topPrediction.prob * 100).toFixed(1)}%</span>
+                        </div>
+                      </div>
+                      {scanResults.low_confidence && (
+                        <p style={{ color: '#f59e0b', fontSize: '13px', marginTop: '4px' }}>
+                          ⚠ Low confidence — consider retaking the photo
+                        </p>
+                      )}
+                    </div>
 
-                {/* Description */}
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Description</span>
-                  <p className={styles.resultDescription}>{scanResults.description}</p>
-                </div>
+                    {/* Severity */}
+                    {remedy?.severity && (
+                      <div className={styles.resultItem}>
+                        <span className={styles.resultLabel}>Severity Level</span>
+                        <span className={`${styles.severityBadge} ${styles[remedy.severity]}`}>
+                          {remedy.severity}
+                        </span>
+                      </div>
+                    )}
 
-                {/* Recommendations */}
-                <div className={styles.resultItem}>
-                  <span className={styles.resultLabel}>Recommended Actions</span>
-                  <ul className={styles.recommendationsList}>
-                    {scanResults.recommendations.map((rec, index) => (
-                      <li key={index} className={styles.recommendationItem}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        {rec}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                    {/* 4-Tab treatment panel */}
+                    <div style={{ marginTop: '16px' }}>
+                      <div style={{ display: 'flex', gap: '4px', borderBottom: '2px solid #e5e7eb', marginBottom: '16px' }}>
+                        {[
+                          { key: 'symptoms',   label: 'Symptoms' },
+                          { key: 'organic',    label: 'Organic' },
+                          { key: 'chemical',   label: 'Chemical' },
+                          { key: 'prevention', label: 'Prevention' },
+                        ].map(tab => (
+                          <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            style={{
+                              padding: '8px 14px',
+                              border: 'none',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: activeTab === tab.key ? 700 : 400,
+                              borderBottom: activeTab === tab.key ? '2px solid #16a34a' : '2px solid transparent',
+                              color: activeTab === tab.key ? '#16a34a' : '#6b7280',
+                              marginBottom: '-2px',
+                            }}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: '14px', lineHeight: '1.7', minHeight: '80px' }}>
+                        {renderTabContent()}
+                      </div>
+                    </div>
+                  </>
+                )}
 
-                {/* Action Buttons */}
                 <div className={styles.actionButtons}>
                   <button onClick={handleReset} className={styles.secondaryButton}>
                     Scan Another Leaf
-                  </button>
-                  <button className={styles.primaryButton}>
-                    Get Full Report
                   </button>
                 </div>
               </div>
@@ -301,7 +326,6 @@ export default function DiseaseDetectionPage() {
             <h3 className={styles.featureTitle}>AI-Powered Analysis</h3>
             <p className={styles.featureDescription}>Advanced machine learning trained on 50,000+ crop disease images</p>
           </div>
-
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -309,23 +333,21 @@ export default function DiseaseDetectionPage() {
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>87% Accuracy</h3>
-            <p className={styles.featureDescription}>Highly accurate disease detection with confidence scoring</p>
+            <h3 className={styles.featureTitle}>38 Disease Classes</h3>
+            <p className={styles.featureDescription}>Highly accurate disease detection across 38 plant diseases</p>
           </div>
-
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>Local Solutions</h3>
+            <h3 className={styles.featureTitle}>Nepal-Specific Solutions</h3>
             <p className={styles.featureDescription}>Organic and traditional remedies alongside modern treatments</p>
           </div>
         </div>
       </main>
 
-      {/* Help Button */}
       <button className={styles.helpButton}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />

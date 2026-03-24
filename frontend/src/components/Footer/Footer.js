@@ -32,14 +32,12 @@ export default function Footer() {
               <li><Link href="/dashboard">Dashboard</Link></li>
               <li><Link href="/disease-detection">Disease Detection</Link></li>
               <li><Link href="/soil-analysis">Soil Analysis</Link></li>
-              <li><Link href="/weather">Weather</Link></li>
             </ul>
           </div>
 
           <div className={styles.footerSection}>
             <h4 className={styles.footerHeading}>Resources</h4>
             <ul className={styles.footerLinks}>
-              <li><Link href="/community">Community Forum</Link></li>
               <li><Link href="/reports">Reports & History</Link></li>
               <li><Link href="/about">About Us</Link></li>
               <li><Link href="/contact">Contact</Link></li>
