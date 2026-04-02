@@ -45,6 +45,11 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Krishi AI Custom Colors */
+  --color-krishi-green: #7fb069;
+  --color-krishi-bg: #f5f0e8;
+  --color-krishi-brown: #e8dcc4;
+  --color-krishi-dark: #2d5016;
 }
 
 :root {
@@ -81,6 +86,25 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-fade-in-up { animation: fade-in-up 0.6s ease-out; }
+.animate-slide-down { animation: slide-down 0.3s ease; }
 
 .dark {
   --background: oklch(0.145 0 0);

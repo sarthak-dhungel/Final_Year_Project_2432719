@@ -351,17 +351,6 @@ export default function SignUpPage() {
           <div className={styles.socialButtons}>
             <button 
               className={styles.socialButton}
-              onClick={() => handleSocialSignUp('facebook')}
-              aria-label="Sign up with Facebook"
-              disabled={isLoading}
-            >
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
-                <path d="M16 2C8.268 2 2 8.268 2 16c0 7.015 5.158 12.834 11.9 13.847V19.67h-3.58v-3.67h3.58v-2.8c0-3.533 2.104-5.484 5.324-5.484 1.542 0 3.156.276 3.156.276v3.468h-1.778c-1.752 0-2.298 1.087-2.298 2.202V16h3.913l-.626 3.67h-3.287v10.177C24.842 28.834 30 23.015 30 16c0-7.732-6.268-14-14-14z"/>
-              </svg>
-            </button>
-
-            <button 
-              className={styles.socialButton}
               onClick={() => handleSocialSignUp('google')}
               aria-label="Sign up with Google"
               disabled={isLoading}

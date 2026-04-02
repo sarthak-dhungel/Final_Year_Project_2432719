@@ -1,27 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [userData, setUserData] = useState(null);
+  const { session, status } = useAuthGuard();
 
-  useEffect(() => {
-    // NO AUTH CHECK - Removed for now
-    // Just load mock data
-    setUserData({
-      name: 'Farmer',
-      lastLogin: new Date().toLocaleDateString()
-    });
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    router.push('/signin');
-  };
+  if (status === 'loading') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <svg style={{ animation: 'spin 1s linear infinite' }} width="40" height="40" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="#7fb069" strokeWidth="4" fill="none" opacity="0.25" />
+          <path d="M12 2a10 10 0 0 1 10 10" stroke="#7fb069" strokeWidth="4" fill="none" />
+        </svg>
+      </div>
+    );
+  }
 
   // Mock data for charts
   const soilNutrients = [
@@ -43,7 +37,6 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.dashboardContainer}>
-      {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Page Title */}
         <div className={styles.pageHeader}>
@@ -66,7 +59,6 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         <div className={styles.statsGrid}>
-          {/* Disease Status */}
           <div className={`${styles.statCard} ${styles.alertCard}`}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>Disease Status</span>
@@ -80,7 +72,6 @@ export default function DashboardPage() {
             <p className={styles.statDescription}>Leaf Blight detected</p>
           </div>
 
-          {/* Soil Quality */}
           <div className={styles.statCard}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>Soil Quality</span>
@@ -92,7 +83,6 @@ export default function DashboardPage() {
             <p className={styles.statDescription}>pH 6.5, Balanced NPK</p>
           </div>
 
-          {/* Recommended Crop */}
           <div className={styles.statCard}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>Recommended Crop</span>
@@ -104,7 +94,6 @@ export default function DashboardPage() {
             <p className={styles.statDescription}>95% soil compatibility</p>
           </div>
 
-          {/* Weather Today */}
           <div className={styles.statCard}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>Weather Today</span>
@@ -119,7 +108,6 @@ export default function DashboardPage() {
 
         {/* Charts Section */}
         <div className={styles.chartsGrid}>
-          {/* Soil Nutrient Levels */}
           <div className={styles.chartCard}>
             <h3 className={styles.chartTitle}>Soil Nutrient Levels</h3>
             <p className={styles.chartSubtitle}>Current NPK values and pH balance</p>
@@ -127,7 +115,7 @@ export default function DashboardPage() {
               {soilNutrients.map((nutrient, index) => (
                 <div key={index} className={styles.barGroup}>
                   <div className={styles.barContainer}>
-                    <div 
+                    <div
                       className={styles.bar}
                       style={{ height: `${(nutrient.value / nutrient.max) * 100}%` }}
                     >
@@ -140,18 +128,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Soil Moisture Trend */}
           <div className={styles.chartCard}>
             <h3 className={styles.chartTitle}>Soil Moisture Trend</h3>
             <p className={styles.chartSubtitle}>Last 7 days moisture levels</p>
             <div className={styles.lineChart}>
               <svg viewBox="0 0 400 200" className={styles.lineChartSvg}>
-                {/* Grid lines */}
                 <line x1="0" y1="50" x2="400" y2="50" stroke="#e5d5b7" strokeWidth="1" strokeDasharray="5,5" />
                 <line x1="0" y1="100" x2="400" y2="100" stroke="#e5d5b7" strokeWidth="1" strokeDasharray="5,5" />
                 <line x1="0" y1="150" x2="400" y2="150" stroke="#e5d5b7" strokeWidth="1" strokeDasharray="5,5" />
-                
-                {/* Line path */}
                 <path
                   d={`M 30,${200 - moistureData[0].value * 2} 
                       L 90,${200 - moistureData[1].value * 2} 
@@ -166,8 +150,6 @@ export default function DashboardPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-                
-                {/* Data points */}
                 {moistureData.map((point, index) => (
                   <circle
                     key={index}

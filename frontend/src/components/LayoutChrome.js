@@ -7,8 +7,13 @@ import Footer from "@/components/Footer/Footer";
 export default function LayoutChrome({ children }) {
   const pathname = usePathname();
 
-  // Hide navbar + footer ONLY on these pages 
-   const hideChrome = pathname === "/" || pathname === "/forgot-password";;
+  // Hide header + footer on splash, auth, and admin pages
+  const hideChrome =
+    pathname === "/" ||
+    pathname === "/signin" ||
+    pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/admin";
 
   return (
     <>
