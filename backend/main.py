@@ -6,6 +6,7 @@ from upload import router as upload_router
 from password_reset import router as password_reset_router
 from soil_analysis import router as soil_router
 from ai_predict import router as ai_router
+from admin import router as admin_router
 
 app = FastAPI() 
 
@@ -28,3 +29,4 @@ app.include_router(upload_router, prefix="/image")
 app.include_router(password_reset_router, prefix="/auth")
 app.include_router(soil_router, prefix="/soil")
 app.include_router(ai_router)  
+app.include_router(admin_router, prefix="/admin")

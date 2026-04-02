@@ -71,7 +71,10 @@ def send_otp_email(recipient_email: str, otp: str):
         
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"[OTP EMAIL ERROR] {type(e).__name__}: {e}")
+        print(f"  SMTP_SERVER={SMTP_SERVER}, SMTP_PORT={SMTP_PORT}")
+        print(f"  SENDER_EMAIL={SENDER_EMAIL}")
+        print(f"  SENDER_PASSWORD={'SET' if SENDER_PASSWORD else 'MISSING'}")
         return False
 
 @router.post("/forgot-password")
