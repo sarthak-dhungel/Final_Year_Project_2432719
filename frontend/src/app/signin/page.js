@@ -38,16 +38,17 @@ export default function SignInPage() {
   }, [searchParams]);
 
   // Admin shortcut
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'F12') {
-        e.preventDefault();
-        router.push('/admin');
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router]);
+// Admin shortcut
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey && e.altKey && e.key === 'F12') {
+      e.preventDefault();
+      router.push('/admin');
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

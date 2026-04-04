@@ -1,98 +1,9 @@
+/* disease-detection.module.css */
+
 /* Page Container */
 .pageContainer {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f0e8 0%, #e8dcc4 100%);
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-}
-
-/* Header */
-.header {
-  background: #ffffff;
-  padding: 16px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.headerContent {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 48px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 48px;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logoText {
-  font-size: 20px;
-  font-weight: 700;
-  color: #2d5016;
-  letter-spacing: -0.5px;
-}
-
-.nav {
-  display: flex;
-  gap: 32px;
-  flex: 1;
-}
-
-.navLink {
-  color: #4a5568;
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 500;
-  transition: color 0.2s ease;
-  position: relative;
-}
-
-.navLink:hover,
-.navLink.active {
-  color: #2d5016;
-}
-
-.navLink.active::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #7fb069;
-}
-
-.searchBar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f7f3ed;
-  padding: 10px 16px;
-  border-radius: 8px;
-  min-width: 250px;
-}
-
-.searchBar svg {
-  color: #9ca3af;
-}
-
-.searchInput {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 14px;
-  color: #4a5568;
-  width: 100%;
-}
-
-.searchInput::placeholder {
-  color: #9ca3af;
 }
 
 /* Main Content */
@@ -128,7 +39,7 @@
   margin-bottom: 48px;
 }
 
-/* Upload Card */
+/* Cards */
 .uploadCard,
 .resultsCard {
   background: #ffffff;
@@ -139,14 +50,8 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .cardTitle {
@@ -183,9 +88,9 @@
   background: #f7fdf9;
 }
 
-.dropZone.dragActive {
-  border-color: #7fb069;
-  background: #f0fdf4;
+.dragActive {
+  border-color: #7fb069 !important;
+  background: #f0fdf4 !important;
   transform: scale(1.02);
 }
 
@@ -280,8 +185,6 @@
 
 .scanButton:hover:not(:disabled) {
   background: #1f3a0f;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(45, 80, 22, 0.3);
 }
 
 .scanButton:disabled {
@@ -294,15 +197,19 @@
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Results */
+/* Loading Screen */
+.loadingScreen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* Empty Results */
 .emptyResults {
   display: flex;
   flex-direction: column;
@@ -319,6 +226,51 @@
   text-align: center;
 }
 
+/* Error Box */
+.errorBox {
+  color: #ef4444;
+  padding: 16px;
+  background: #fef2f2;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.errorBox strong {
+  margin-right: 4px;
+}
+
+/* Rejection Screen */
+.rejectionScreen {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.rejectionIcon {
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.rejectionTitle {
+  color: #1a202c;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.rejectionMessage {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0 auto 24px;
+}
+
+.retryButton {
+  max-width: 240px;
+  margin: 0 auto;
+}
+
+/* Results Content */
 .resultsContent {
   display: flex;
   flex-direction: column;
@@ -344,6 +296,12 @@
   font-weight: 700;
   color: #1a202c;
   margin: 0;
+}
+
+.resultNepali {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 2px 0 0 0;
 }
 
 /* Confidence Bar */
@@ -381,51 +339,101 @@
   font-weight: 600;
 }
 
-.severityBadge.low {
+.low {
   background: #d1fae5;
   color: #065f46;
 }
 
-.severityBadge.moderate {
+.moderate {
   background: #fef3c7;
   color: #92400e;
 }
 
-.severityBadge.high {
+.high {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.resultDescription {
-  font-size: 14px;
-  color: #4a5568;
-  line-height: 1.6;
-  margin: 0;
+.critical {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
-/* Recommendations List */
-.recommendationsList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Other Possibilities */
+.otherPredictions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.recommendationItem {
+.predictionRow {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 14px;
-  color: #4a5568;
-  line-height: 1.5;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
-.recommendationItem svg {
-  color: #7fb069;
-  flex-shrink: 0;
-  margin-top: 2px;
+.predictionLabel {
+  color: #4a5568;
+}
+
+.predictionProb {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+/* Tabs */
+.tabsWrapper {
+  margin-top: 16px;
+}
+
+.tabsHeader {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.tabButton {
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s ease;
+}
+
+.tabButtonActive {
+  font-weight: 700;
+  color: #2d5016;
+  border-bottom-color: #2d5016;
+}
+
+.tabContent {
+  font-size: 14px;
+  line-height: 1.7;
+  min-height: 80px;
+}
+
+.tabContent ul {
+  padding-left: 16px;
+  margin: 0;
+}
+
+.tabContent li {
+  margin-bottom: 6px;
+}
+
+.noData {
+  color: #6b7280;
 }
 
 /* Action Buttons */
@@ -445,6 +453,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .primaryButton {
@@ -454,8 +466,6 @@
 
 .primaryButton:hover {
   background: #6a9757;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(127, 176, 105, 0.3);
 }
 
 .secondaryButton {
@@ -518,33 +528,7 @@
   margin: 0;
 }
 
-/* Help Button */
-.helpButton {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #1a202c;
-  color: #ffffff;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-  z-index: 50;
-}
-
-.helpButton:hover {
-  background: #2d3748;
-  transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
-}
-
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 1200px) {
   .contentGrid {
     grid-template-columns: 1fr;
@@ -556,22 +540,6 @@
 }
 
 @media (max-width: 768px) {
-  .headerContent {
-    padding: 0 24px;
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-
-  .nav {
-    width: 100%;
-    overflow-x: auto;
-    gap: 20px;
-  }
-
-  .searchBar {
-    width: 100%;
-  }
-
   .mainContent {
     padding: 24px 24px 80px;
   }

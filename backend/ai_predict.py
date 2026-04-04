@@ -12,7 +12,7 @@ from disease_remedies import DISEASE_REMEDIES
 router = APIRouter(prefix="/api/ai", tags=["AI"])
 
 BASE_DIR = os.path.dirname(__file__)
-MODEL_PATH = os.path.join(BASE_DIR, "krishi_model_ts.pt")
+MODEL_PATH = os.path.join(BASE_DIR, "krishi_model_v2_ts.pt")
 CLASS_MAP_PATH = os.path.join(BASE_DIR, "class_to_idx.json")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -23,7 +23,7 @@ _idx_to_class = None
 _model_lock = threading.Lock()
 
 _transform = T.Compose([
-    T.Resize((224,224)),
+    T.Resize((300,300)),
     T.ToTensor(),
     T.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])
 ])
@@ -76,15 +76,23 @@ async def predict(request: Request, file: UploadFile = File(...)):
     results = []
     for p, idx in zip(top_p[0].cpu().tolist(), top_idx[0].cpu().tolist()):
         label = _idx_to_class.get(str(int(idx)), "unknown")
-        # Attach remedy data from DISEASE_REMEDIES if available
         remedy = DISEASE_REMEDIES.get(label)
         results.append({
             "label": label,
             "prob": float(p),
-            "remedy": remedy  # may be None if label not in remedies dict
+            "remedy": remedy
         })
 
-    low_confidence = results and results[0]["prob"] < 0.6
+    low_confidence = results and results[0]["prob"] < 0.85
+
+    # Reject non-leaf images
+    if low_confidence:
+        return JSONResponse({
+            "predictions": results,
+            "low_confidence": True,
+            "rejected": True,
+            "message": "This does not appear to be a valid plant leaf image. Please upload a clear photo of a diseased leaf."
+        })
 
     # --- Save image + prediction to MongoDB as Base64 ---
     try:
@@ -110,4 +118,4 @@ async def predict(request: Request, file: UploadFile = File(...)):
     except Exception as db_err:
         print(f"[WARN] Failed to save image to MongoDB: {db_err}")
 
-    return JSONResponse({"predictions": results, "low_confidence": bool(low_confidence)})
+    return JSONResponse({"predictions": results, "low_confidence": False})
