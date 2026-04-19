@@ -2,26 +2,26 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
 import math
+from datetime import datetime
+from database import db
 
 router = APIRouter()
 
 class SoilAnalysisRequest(BaseModel):
     ph: float
-    nitrogen: float  # percentage
-    phosphorus: float  # percentage
-    potassium: float  # percentage
-    moisture: float  # percentage
+    nitrogen: float
+    phosphorus: float
+    potassium: float
+    moisture: float
 
 class CropRecommendation(BaseModel):
     name: str
     emoji: str
     description: str
-    soil_fit: int  # percentage
+    soil_fit: int
     highly_recommended: bool
 
-# Comprehensive crop database with pH, NPK, and moisture requirements
 CROPS_DATABASE = [
-    # Major crops from design
     {
         "name": "Wheat",
         "emoji": "🌾",
@@ -82,7 +82,6 @@ CROPS_DATABASE = [
         "moisture_min": 50, "moisture_max": 70,
         "description": "Good soil structure"
     },
-    # Additional crops
     {
         "name": "Potato",
         "emoji": "🥔",
@@ -126,66 +125,30 @@ CROPS_DATABASE = [
 ]
 
 def calculate_parameter_score(value: float, min_val: float, max_val: float) -> float:
-    """Calculate how well a value fits within a range (0-100)"""
     if value < min_val:
-        # Below minimum - calculate distance penalty
         distance = min_val - value
-        penalty = min(distance * 10, 100)  # 10% penalty per unit below
+        penalty = min(distance * 10, 100)
         return max(0, 100 - penalty)
     elif value > max_val:
-        # Above maximum - calculate distance penalty
         distance = value - max_val
         penalty = min(distance * 10, 100)
         return max(0, 100 - penalty)
     else:
-        # Within range - calculate how close to optimal center
         center = (min_val + max_val) / 2
         distance_from_center = abs(value - center)
         range_size = max_val - min_val
-        score = 100 - (distance_from_center / range_size * 20)  # Max 20% penalty
-        return max(90, score)  # Minimum 90 if within range
+        score = 100 - (distance_from_center / range_size * 20)
+        return max(90, score)
 
 def calculate_soil_fit(soil: SoilAnalysisRequest, crop: Dict) -> float:
-    """Calculate overall soil fitness for a crop"""
-    ph_score = calculate_parameter_score(
-        soil.ph, 
-        crop["optimal_ph_min"], 
-        crop["optimal_ph_max"]
-    )
-    
-    n_score = calculate_parameter_score(
-        soil.nitrogen,
-        crop["nitrogen_min"],
-        crop["nitrogen_max"]
-    )
-    
-    p_score = calculate_parameter_score(
-        soil.phosphorus,
-        crop["phosphorus_min"],
-        crop["phosphorus_max"]
-    )
-    
-    k_score = calculate_parameter_score(
-        soil.potassium,
-        crop["potassium_min"],
-        crop["potassium_max"]
-    )
-    
-    moisture_score = calculate_parameter_score(
-        soil.moisture,
-        crop["moisture_min"],
-        crop["moisture_max"]
-    )
-    
-    # Weighted average (pH and NPK more important than moisture)
-    weights = {
-        "ph": 0.25,
-        "n": 0.20,
-        "p": 0.20,
-        "k": 0.20,
-        "moisture": 0.15
-    }
-    
+    ph_score = calculate_parameter_score(soil.ph, crop["optimal_ph_min"], crop["optimal_ph_max"])
+    n_score = calculate_parameter_score(soil.nitrogen, crop["nitrogen_min"], crop["nitrogen_max"])
+    p_score = calculate_parameter_score(soil.phosphorus, crop["phosphorus_min"], crop["phosphorus_max"])
+    k_score = calculate_parameter_score(soil.potassium, crop["potassium_min"], crop["potassium_max"])
+    moisture_score = calculate_parameter_score(soil.moisture, crop["moisture_min"], crop["moisture_max"])
+
+    weights = {"ph": 0.25, "n": 0.20, "p": 0.20, "k": 0.20, "moisture": 0.15}
+
     total_score = (
         ph_score * weights["ph"] +
         n_score * weights["n"] +
@@ -193,14 +156,11 @@ def calculate_soil_fit(soil: SoilAnalysisRequest, crop: Dict) -> float:
         k_score * weights["k"] +
         moisture_score * weights["moisture"]
     )
-    
+
     return round(total_score)
 
 @router.post("/analyze")
 async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
-    """Analyze soil and return crop recommendations"""
-    
-    # Validate input ranges
     if not (0 <= soil.ph <= 14):
         raise HTTPException(status_code=400, detail="pH must be between 0 and 14")
     if not (0 <= soil.nitrogen <= 100):
@@ -211,12 +171,10 @@ async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
         raise HTTPException(status_code=400, detail="Potassium must be between 0 and 100%")
     if not (0 <= soil.moisture <= 100):
         raise HTTPException(status_code=400, detail="Moisture must be between 0 and 100%")
-    
-    # Calculate soil fit for each crop
+
     recommendations = []
     for crop in CROPS_DATABASE:
         soil_fit = calculate_soil_fit(soil, crop)
-        
         recommendations.append({
             "name": crop["name"],
             "emoji": crop["emoji"],
@@ -224,64 +182,29 @@ async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
             "soil_fit": soil_fit,
             "highly_recommended": soil_fit >= 80
         })
-    
-    # Sort by soil fit (highest first)
+
     recommendations.sort(key=lambda x: x["soil_fit"], reverse=True)
-    
-    # Take top 6 for display
     top_recommendations = recommendations[:6]
-    
-    # Generate insights
+
     insights = []
-    
-    # pH insight
+
     if soil.ph < 5.5:
-        insights.append({
-            "type": "ph",
-            "title": "pH Balance",
-            "message": f"pH {soil.ph} is acidic. Consider adding lime to raise pH for better crop variety."
-        })
+        insights.append({"type": "ph", "title": "pH Balance", "message": f"pH {soil.ph} is acidic. Consider adding lime to raise pH for better crop variety."})
     elif soil.ph > 7.5:
-        insights.append({
-            "type": "ph",
-            "title": "pH Balance",
-            "message": f"pH {soil.ph} is alkaline. Most crops prefer slightly acidic to neutral soil."
-        })
+        insights.append({"type": "ph", "title": "pH Balance", "message": f"pH {soil.ph} is alkaline. Most crops prefer slightly acidic to neutral soil."})
     else:
-        insights.append({
-            "type": "ph",
-            "title": "pH Balance",
-            "message": f"pH {soil.ph} is ideal for most crops"
-        })
-    
-    # Moisture insight
+        insights.append({"type": "ph", "title": "pH Balance", "message": f"pH {soil.ph} is ideal for most crops"})
+
     if soil.moisture < 40:
-        insights.append({
-            "type": "moisture",
-            "title": "Moisture Level",
-            "message": f"Current moisture is {soil.moisture}%. Consider irrigation"
-        })
+        insights.append({"type": "moisture", "title": "Moisture Level", "message": f"Current moisture is {soil.moisture}%. Consider irrigation"})
     elif soil.moisture > 70:
-        insights.append({
-            "type": "moisture",
-            "title": "Moisture Level",
-            "message": f"Moisture level is {soil.moisture}%. Ensure proper drainage"
-        })
+        insights.append({"type": "moisture", "title": "Moisture Level", "message": f"Moisture level is {soil.moisture}%. Ensure proper drainage"})
     else:
-        insights.append({
-            "type": "moisture",
-            "title": "Moisture Level",
-            "message": f"Current moisture is {soil.moisture}%. Good moisture level"
-        })
-    
-    # NPK insight
+        insights.append({"type": "moisture", "title": "Moisture Level", "message": f"Current moisture is {soil.moisture}%. Good moisture level"})
+
     npk_balanced = abs(soil.nitrogen - 60) < 20 and abs(soil.phosphorus - 45) < 15 and abs(soil.potassium - 50) < 15
     if npk_balanced:
-        insights.append({
-            "type": "nutrient",
-            "title": "Nutrient Status",
-            "message": "NPK levels are balanced. Consider organic compost for sustainability"
-        })
+        insights.append({"type": "nutrient", "title": "Nutrient Status", "message": "NPK levels are balanced. Consider organic compost for sustainability"})
     else:
         deficient = []
         if soil.nitrogen < 50:
@@ -290,20 +213,12 @@ async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
             deficient.append("phosphorus")
         if soil.potassium < 40:
             deficient.append("potassium")
-        
+
         if deficient:
-            insights.append({
-                "type": "nutrient",
-                "title": "Nutrient Status",
-                "message": f"Low {', '.join(deficient)}. Consider appropriate fertilizers"
-            })
+            insights.append({"type": "nutrient", "title": "Nutrient Status", "message": f"Low {', '.join(deficient)}. Consider appropriate fertilizers"})
         else:
-            insights.append({
-                "type": "nutrient",
-                "title": "Nutrient Status",
-                "message": "NPK levels are adequate"
-            })
-    
+            insights.append({"type": "nutrient", "title": "Nutrient Status", "message": "NPK levels are adequate"})
+
     return {
         "recommendations": top_recommendations,
         "insights": insights,
@@ -315,3 +230,48 @@ async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
             "moisture": soil.moisture
         }
     }
+
+
+# ============ ARDUINO LIVE READINGS ============
+
+class SoilReadingInput(BaseModel):
+    moisture: float = 0
+    temperature: float = 0
+    ec: float = 0
+    ph: float = 0
+    nitrogen: float = 0
+    phosphorus: float = 0
+    potassium: float = 0
+
+@router.post("/reading")
+async def save_soil_reading(data: SoilReadingInput):
+    reading = {
+        "moisture": data.moisture,
+        "temperature": data.temperature,
+        "ec": data.ec,
+        "ph": data.ph,
+        "nitrogen": data.nitrogen,
+        "phosphorus": data.phosphorus,
+        "potassium": data.potassium,
+        "timestamp": datetime.utcnow()
+    }
+    result = await db.soil_readings.insert_one(reading)
+    return {"message": "Reading saved", "id": str(result.inserted_id)}
+
+@router.get("/latest")
+async def get_latest_reading():
+    reading = await db.soil_readings.find_one(sort=[("timestamp", -1)])
+    if not reading:
+        return {"message": "No readings yet", "data": None}
+    reading["_id"] = str(reading["_id"])
+    return {"data": reading}
+
+@router.get("/history")
+async def get_reading_history(limit: int = 20):
+    cursor = db.soil_readings.find().sort("timestamp", -1).limit(limit)
+    readings = []
+    async for r in cursor:
+        r["_id"] = str(r["_id"])
+        readings.append(r)
+    readings.reverse()
+    return {"readings": readings, "count": len(readings)}
