@@ -1,0 +1,350 @@
+/* profile.module.css */
+
+.pageContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f0e8 0%, #e8dcc4 100%);
+}
+
+.mainContent {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+
+/* Page Header */
+.pageHeader {
+  margin-bottom: 32px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.pageSubtitle {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+}
+
+/* Message Banner */
+.messageBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.messageSuccess {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.messageError {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* User Card */
+.userCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2D7A3E, #7fb069);
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userName {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 4px;
+}
+
+.userEmail {
+  font-size: 14px;
+  color: #718096;
+  margin: 0 0 4px;
+}
+
+.roleBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2D7A3E;
+  background: #e8f5e0;
+  padding: 3px 10px;
+  border-radius: 50px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Card */
+.card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.cardHeader {
+  padding: 20px 28px;
+  border-bottom: 1px solid #f0ebe3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.cardBody {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cardBodyPassword {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Form Fields */
+.fieldLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 8px;
+}
+
+.fieldValue {
+  font-size: 15px;
+  color: #1a202c;
+  margin: 0;
+  font-weight: 500;
+}
+
+.fieldValueMuted {
+  font-size: 15px;
+  color: #8B8B8B;
+  margin: 0;
+}
+
+.textInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e8dcc4;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a202c;
+  background: #fafaf8;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.textInput:focus {
+  border-color: #7fb069;
+}
+
+.selectInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e8dcc4;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1a202c;
+  background: #fafaf8;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.selectInput:focus {
+  border-color: #7fb069;
+}
+
+/* Buttons */
+.editButton {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D7A3E;
+  background: #e8f5e0;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: #d4edcf;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.saveButton {
+  padding: 12px 28px;
+  background: #2d5016;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton:hover {
+  background: #1f3a0f;
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 12px 28px;
+  background: #f7f3ed;
+  color: #4a5568;
+  border: 1px solid #e8dcc4;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #efe8dc;
+}
+
+/* Sign Out Card */
+.signOutCard {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.signOutTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 4px;
+}
+
+.signOutSubtitle {
+  font-size: 13px;
+  color: #718096;
+  margin: 0;
+}
+
+.signOutButton {
+  padding: 10px 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.signOutButton:hover {
+  background: #fee2e2;
+}
+
+/* Loading */
+.loadingScreen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 24px 16px 80px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+  }
+
+  .userCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .buttonRow {
+    flex-direction: column;
+  }
+
+  .signOutCard {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+}

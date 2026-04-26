@@ -172,6 +172,19 @@ async def analyze_soil(soil: SoilAnalysisRequest) -> Dict:
     if not (0 <= soil.moisture <= 100):
         raise HTTPException(status_code=400, detail="Moisture must be between 0 and 100%")
 
+    # Save analysis to soil_readings for dashboard
+    await db.soil_readings.insert_one({
+        "moisture": soil.moisture,
+        "temperature": 0,
+        "ec": 0,
+        "ph": soil.ph,
+        "nitrogen": soil.nitrogen,
+        "phosphorus": soil.phosphorus,
+        "potassium": soil.potassium,
+        "timestamp": datetime.utcnow(),
+        "source": "manual"
+    })
+
     recommendations = []
     for crop in CROPS_DATABASE:
         soil_fit = calculate_soil_fit(soil, crop)
