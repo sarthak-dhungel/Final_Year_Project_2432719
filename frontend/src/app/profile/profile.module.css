@@ -338,6 +338,68 @@
   font-weight: 600;
 }
 
+/* High Contrast Toggle */
+.contrastToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border: 2px solid #e8dcc4;
+  border-radius: 12px;
+  background: #fafaf8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.contrastToggle:hover {
+  border-color: #7fb069;
+}
+
+.contrastToggleActive {
+  border-color: #2d5016;
+  background: #e8f5e0;
+}
+
+.contrastToggleTrack {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: #d1d5db;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.contrastToggleActive .contrastToggleTrack {
+  background: #2d5016;
+}
+
+.contrastToggleThumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.contrastToggleActive .contrastToggleThumb {
+  transform: translateX(20px);
+}
+
+.contrastToggleLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.contrastToggleActive .contrastToggleLabel {
+  color: #2d5016;
+}
+
 /* Sign Out Card */
 .signOutCard {
   background: #ffffff;

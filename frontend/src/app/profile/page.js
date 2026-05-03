@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [currentFontSize, setCurrentFontSize] = useState('medium');
+  const [highContrast, setHighContrast] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,9 +29,13 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('krishi_fontsize') || 'medium';
-    setCurrentFontSize(saved);
-    applyFontSize(saved);
+    const savedFont = localStorage.getItem('krishi_fontsize') || 'medium';
+    setCurrentFontSize(savedFont);
+    applyFontSize(savedFont);
+
+    const savedContrast = localStorage.getItem('krishi_contrast') === 'true';
+    setHighContrast(savedContrast);
+    if (savedContrast) document.body.classList.add('high-contrast');
   }, []);
 
   useEffect(() => {
@@ -53,6 +58,17 @@ export default function ProfilePage() {
     setCurrentFontSize(size);
     applyFontSize(size);
     localStorage.setItem('krishi_fontsize', size);
+  };
+
+  const handleContrastToggle = () => {
+    const newVal = !highContrast;
+    setHighContrast(newVal);
+    if (newVal) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+    localStorage.setItem('krishi_contrast', newVal.toString());
   };
 
   const handleSaveProfile = async () => {
@@ -232,6 +248,7 @@ export default function ProfilePage() {
             <h2 className={styles.cardTitle}>Accessibility</h2>
           </div>
           <div className={styles.cardBody}>
+            {/* Font Size */}
             <div>
               <label className={styles.fieldLabel}>Text Size</label>
               <p className={styles.fieldDescription}>Adjust the text size across the application for better readability</p>
@@ -249,6 +266,26 @@ export default function ProfilePage() {
                   <span className={styles.fontSizeBtnLabel}>Large</span>
                 </button>
               </div>
+            </div>
+
+            {/* High Contrast */}
+            <div>
+              <label className={styles.fieldLabel}>High Contrast</label>
+              <p className={styles.fieldDescription}>Increase contrast for better visibility in bright conditions</p>
+              <button
+                onClick={handleContrastToggle}
+                className={`${styles.contrastToggle} ${highContrast ? styles.contrastToggleActive : ''}`}
+                role="switch"
+                aria-checked={highContrast}
+                aria-label="Toggle high contrast mode"
+              >
+                <span className={styles.contrastToggleTrack}>
+                  <span className={styles.contrastToggleThumb} />
+                </span>
+                <span className={styles.contrastToggleLabel}>
+                  {highContrast ? 'On' : 'Off'}
+                </span>
+              </button>
             </div>
           </div>
         </div>
