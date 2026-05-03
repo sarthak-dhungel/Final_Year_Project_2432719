@@ -219,5 +219,30 @@
   animation-delay: 1.5s;
 }
 
+/* Accessibility - Font Size Scaling */
+body.font-small {
+  font-size: 14px !important;
+}
 
+body.font-small * {
+  font-size: inherit;
+}
+
+body.font-small h1 { font-size: 26px !important; }
+body.font-small h2 { font-size: 20px !important; }
+body.font-small h3 { font-size: 16px !important; }
+body.font-small p, body.font-small span, body.font-small label, body.font-small input, body.font-small select, body.font-small button, body.font-small a, body.font-small li {
+  font-size: 13px !important;
+}
+
+body.font-large {
+  font-size: 20px !important;
+}
+
+body.font-large h1 { font-size: 40px !important; }
+body.font-large h2 { font-size: 30px !important; }
+body.font-large h3 { font-size: 24px !important; }
+body.font-large p, body.font-large span, body.font-large label, body.font-large input, body.font-large select, body.font-large button, body.font-large a, body.font-large li {
+  font-size: 18px !important;
+}
 

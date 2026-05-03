@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [currentFontSize, setCurrentFontSize] = useState('medium');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,6 +28,12 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
+    const saved = localStorage.getItem('krishi_fontsize') || 'medium';
+    setCurrentFontSize(saved);
+    applyFontSize(saved);
+  }, []);
+
+  useEffect(() => {
     if (session?.user) {
       setFormData({
         name: session.user.name || '',
@@ -35,6 +42,18 @@ export default function ProfilePage() {
       });
     }
   }, [session, lang]);
+
+  const applyFontSize = (size) => {
+    document.body.classList.remove('font-small', 'font-large');
+    if (size === 'small') document.body.classList.add('font-small');
+    if (size === 'large') document.body.classList.add('font-large');
+  };
+
+  const handleFontSize = (size) => {
+    setCurrentFontSize(size);
+    applyFontSize(size);
+    localStorage.setItem('krishi_fontsize', size);
+  };
 
   const handleSaveProfile = async () => {
     setLang(formData.language === 'Nepali' ? 'ne' : 'en');
@@ -116,7 +135,7 @@ export default function ProfilePage() {
   if (status === 'loading') {
     return (
       <div className={styles.loadingScreen}>
-        <svg className={styles.spinner} width="40" height="40" viewBox="0 0 24 24">
+        <svg className={styles.spinner} width="40" height="40" viewBox="0 0 24 24" aria-label="Loading">
           <circle cx="12" cy="12" r="10" stroke="#7fb069" strokeWidth="4" fill="none" opacity="0.25" />
           <path d="M12 2a10 10 0 0 1 10 10" stroke="#7fb069" strokeWidth="4" fill="none" />
         </svg>
@@ -126,22 +145,24 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.pageContainer}>
-      <main className={styles.mainContent}>
-        {/* Page Header */}
+      <main className={styles.mainContent} role="main" aria-label="Profile settings">
         <div className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>My Profile</h1>
           <p className={styles.pageSubtitle}>Manage your account settings</p>
         </div>
 
-        {/* Messages */}
         {message.text && (
-          <div className={`${styles.messageBanner} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}>
+          <div
+            className={`${styles.messageBanner} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}
+            role="alert"
+            aria-live="polite"
+          >
             {message.type === 'success' ? (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             )}
@@ -149,11 +170,8 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* User Card */}
         <div className={styles.userCard}>
-          <div className={styles.avatar}>
-            {getUserInitials()}
-          </div>
+          <div className={styles.avatar} aria-hidden="true">{getUserInitials()}</div>
           <div className={styles.userInfo}>
             <h2 className={styles.userName}>{session?.user?.name || 'Farmer'}</h2>
             <p className={styles.userEmail}>{session?.user?.email}</p>
@@ -161,48 +179,33 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Information Card */}
+        {/* Profile Information */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Profile Information</h2>
             {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className={styles.editButton}>
+              <button onClick={() => setIsEditing(true)} className={styles.editButton} aria-label="Edit profile information">
                 Edit Profile
               </button>
             )}
           </div>
-
           <div className={styles.cardBody}>
-            {/* Full Name */}
             <div>
-              <label className={styles.fieldLabel}>Full Name</label>
+              <label className={styles.fieldLabel} htmlFor="fullName">Full Name</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={styles.textInput}
-                />
+                <input id="fullName" type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={styles.textInput} aria-label="Full name" />
               ) : (
                 <p className={styles.fieldValue}>{formData.name || 'Not set'}</p>
               )}
             </div>
-
-            {/* Email */}
             <div>
               <label className={styles.fieldLabel}>Email Address</label>
               <p className={styles.fieldValueMuted}>{formData.email}</p>
             </div>
-
-            {/* Language */}
             <div>
-              <label className={styles.fieldLabel}>Preferred Language</label>
+              <label className={styles.fieldLabel} htmlFor="language">Preferred Language</label>
               {isEditing ? (
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className={styles.selectInput}
-                >
+                <select id="language" value={formData.language} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className={styles.selectInput} aria-label="Select preferred language">
                   <option value="English">English</option>
                   <option value="Nepali">Nepali (नेपाली)</option>
                 </select>
@@ -210,28 +213,12 @@ export default function ProfilePage() {
                 <p className={styles.fieldValue}>{formData.language}</p>
               )}
             </div>
-
-            {/* Action Buttons */}
             {isEditing && (
               <div className={styles.buttonRow}>
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={isSaving}
-                  className={styles.saveButton}
-                >
+                <button onClick={handleSaveProfile} disabled={isSaving} className={styles.saveButton} aria-label="Save profile changes">
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setFormData({
-                      name: session?.user?.name || '',
-                      email: session?.user?.email || '',
-                      language: lang === 'ne' ? 'Nepali' : 'English',
-                    });
-                  }}
-                  className={styles.cancelButton}
-                >
+                <button onClick={() => { setIsEditing(false); setFormData({ name: session?.user?.name || '', email: session?.user?.email || '', language: lang === 'ne' ? 'Nepali' : 'English' }); }} className={styles.cancelButton} aria-label="Cancel editing">
                   Cancel
                 </button>
               </div>
@@ -239,49 +226,60 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Change Password Card */}
+        {/* Accessibility */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Accessibility</h2>
+          </div>
+          <div className={styles.cardBody}>
+            <div>
+              <label className={styles.fieldLabel}>Text Size</label>
+              <p className={styles.fieldDescription}>Adjust the text size across the application for better readability</p>
+              <div className={styles.fontSizeGroup} role="group" aria-label="Font size selection">
+                <button onClick={() => handleFontSize('small')} className={`${styles.fontSizeBtn} ${currentFontSize === 'small' ? styles.fontSizeBtnActive : ''}`} aria-label="Small text size" aria-pressed={currentFontSize === 'small'}>
+                  <span className={styles.fontSizeSmall}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Small</span>
+                </button>
+                <button onClick={() => handleFontSize('medium')} className={`${styles.fontSizeBtn} ${currentFontSize === 'medium' ? styles.fontSizeBtnActive : ''}`} aria-label="Medium text size" aria-pressed={currentFontSize === 'medium'}>
+                  <span className={styles.fontSizeMedium}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Medium</span>
+                </button>
+                <button onClick={() => handleFontSize('large')} className={`${styles.fontSizeBtn} ${currentFontSize === 'large' ? styles.fontSizeBtnActive : ''}`} aria-label="Large text size" aria-pressed={currentFontSize === 'large'}>
+                  <span className={styles.fontSizeLarge}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Large</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Change Password */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Change Password</h2>
             {!isChangingPassword && (
-              <button onClick={() => setIsChangingPassword(true)} className={styles.editButton}>
+              <button onClick={() => setIsChangingPassword(true)} className={styles.editButton} aria-label="Change your password">
                 Change Password
               </button>
             )}
           </div>
-
           {isChangingPassword && (
             <div className={styles.cardBodyPassword}>
               {['Current Password', 'New Password', 'Confirm New Password'].map((label, i) => {
                 const keys = ['currentPassword', 'newPassword', 'confirmPassword'];
+                const ids = ['currentPw', 'newPw', 'confirmPw'];
                 return (
                   <div key={i}>
-                    <label className={styles.fieldLabel}>{label}</label>
-                    <input
-                      type="password"
-                      value={passwordData[keys[i]]}
-                      onChange={(e) => setPasswordData({ ...passwordData, [keys[i]]: e.target.value })}
-                      className={styles.textInput}
-                    />
+                    <label className={styles.fieldLabel} htmlFor={ids[i]}>{label}</label>
+                    <input id={ids[i]} type="password" value={passwordData[keys[i]]} onChange={(e) => setPasswordData({ ...passwordData, [keys[i]]: e.target.value })} className={styles.textInput} aria-label={label} autoComplete={i === 0 ? 'current-password' : 'new-password'} />
                   </div>
                 );
               })}
-
               <div className={styles.buttonRow}>
-                <button
-                  onClick={handleChangePassword}
-                  disabled={isSaving}
-                  className={styles.saveButton}
-                >
+                <button onClick={handleChangePassword} disabled={isSaving} className={styles.saveButton} aria-label="Submit password change">
                   {isSaving ? 'Changing...' : 'Change Password'}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsChangingPassword(false);
-                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                  }}
-                  className={styles.cancelButton}
-                >
+                <button onClick={() => { setIsChangingPassword(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className={styles.cancelButton} aria-label="Cancel password change">
                   Cancel
                 </button>
               </div>
@@ -289,14 +287,14 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Sign Out Card */}
+        {/* Sign Out */}
         <div className={styles.signOutCard}>
           <div>
             <h3 className={styles.signOutTitle}>Sign Out</h3>
             <p className={styles.signOutSubtitle}>End your current session</p>
           </div>
-          <button onClick={handleSignOut} className={styles.signOutButton}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button onClick={handleSignOut} className={styles.signOutButton} aria-label="Sign out of your account">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
