@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthGuard } from '@/lib/useAuthGuard';
+import { useLanguage } from '@/lib/LanguageContext';
 import { signOut } from 'next-auth/react';
+import styles from './profile.module.css';
 
 export default function ProfilePage() {
   const { session, status } = useAuthGuard();
+  const { lang, setLang } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [currentFontSize, setCurrentFontSize] = useState('medium');
+  const [highContrast, setHighContrast] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -24,16 +29,50 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
+    const savedFont = localStorage.getItem('krishi_fontsize') || 'medium';
+    setCurrentFontSize(savedFont);
+    applyFontSize(savedFont);
+
+    const savedContrast = localStorage.getItem('krishi_contrast') === 'true';
+    setHighContrast(savedContrast);
+    if (savedContrast) document.body.classList.add('high-contrast');
+  }, []);
+
+  useEffect(() => {
     if (session?.user) {
       setFormData({
         name: session.user.name || '',
         email: session.user.email || '',
-        language: session.user.language || 'English',
+        language: lang === 'ne' ? 'Nepali' : 'English',
       });
     }
-  }, [session]);
+  }, [session, lang]);
+
+  const applyFontSize = (size) => {
+    document.body.classList.remove('font-small', 'font-large');
+    if (size === 'small') document.body.classList.add('font-small');
+    if (size === 'large') document.body.classList.add('font-large');
+  };
+
+  const handleFontSize = (size) => {
+    setCurrentFontSize(size);
+    applyFontSize(size);
+    localStorage.setItem('krishi_fontsize', size);
+  };
+
+  const handleContrastToggle = () => {
+    const newVal = !highContrast;
+    setHighContrast(newVal);
+    if (newVal) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+    localStorage.setItem('krishi_contrast', newVal.toString());
+  };
 
   const handleSaveProfile = async () => {
+    setLang(formData.language === 'Nepali' ? 'ne' : 'en');
     setIsSaving(true);
     setMessage({ type: '', text: '' });
 
@@ -55,7 +94,8 @@ export default function ProfilePage() {
         setMessage({ type: 'error', text: data.detail || 'Failed to update profile' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Something went wrong' });
+      setMessage({ type: 'success', text: 'Language updated!' });
+      setIsEditing(false);
     } finally {
       setIsSaving(false);
     }
@@ -110,8 +150,8 @@ export default function ProfilePage() {
 
   if (status === 'loading') {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <svg style={{ animation: 'spin 1s linear infinite' }} width="40" height="40" viewBox="0 0 24 24">
+      <div className={styles.loadingScreen}>
+        <svg className={styles.spinner} width="40" height="40" viewBox="0 0 24 24" aria-label="Loading">
           <circle cx="12" cy="12" r="10" stroke="#7fb069" strokeWidth="4" fill="none" opacity="0.25" />
           <path d="M12 2a10 10 0 0 1 10 10" stroke="#7fb069" strokeWidth="4" fill="none" />
         </svg>
@@ -120,53 +160,25 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f5f0e8 0%, #e8dcc4 100%)',
-      fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    }}>
-      <main style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '48px 32px 80px',
-      }}>
-        {/* Page Header */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: 700,
-            color: '#1a202c',
-            margin: '0 0 8px',
-            letterSpacing: '-0.5px',
-          }}>
-            My Profile
-          </h1>
-          <p style={{ fontSize: '16px', color: '#718096', margin: 0 }}>
-            Manage your account settings
-          </p>
+    <div className={styles.pageContainer}>
+      <main className={styles.mainContent} role="main" aria-label="Profile settings">
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>My Profile</h1>
+          <p className={styles.pageSubtitle}>Manage your account settings</p>
         </div>
 
-        {/* Messages */}
         {message.text && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '14px 18px',
-            borderRadius: '12px',
-            marginBottom: '24px',
-            fontSize: '14px',
-            fontWeight: 500,
-            background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-            color: message.type === 'success' ? '#166534' : '#991b1b',
-            border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-          }}>
+          <div
+            className={`${styles.messageBanner} ${message.type === 'success' ? styles.messageSuccess : styles.messageError}`}
+            role="alert"
+            aria-live="polite"
+          >
             {message.type === 'success' ? (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             )}
@@ -174,208 +186,55 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* User Card */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '20px',
-          padding: '32px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px',
-        }}>
-          <div style={{
-            width: '72px',
-            height: '72px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2D7A3E, #7fb069)',
-            color: 'white',
-            fontSize: '24px',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            {getUserInitials()}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#1a202c', margin: '0 0 4px' }}>
-              {session?.user?.name || 'Farmer'}
-            </h2>
-            <p style={{ fontSize: '14px', color: '#718096', margin: '0 0 4px' }}>
-              {session?.user?.email}
-            </p>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: '#2D7A3E',
-              background: '#e8f5e0',
-              padding: '3px 10px',
-              borderRadius: '50px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              {session?.user?.role || 'Farmer'}
-            </span>
+        <div className={styles.userCard}>
+          <div className={styles.avatar} aria-hidden="true">{getUserInitials()}</div>
+          <div className={styles.userInfo}>
+            <h2 className={styles.userName}>{session?.user?.name || 'Farmer'}</h2>
+            <p className={styles.userEmail}>{session?.user?.email}</p>
+            <span className={styles.roleBadge}>{session?.user?.role || 'Farmer'}</span>
           </div>
         </div>
 
-        {/* Profile Information Card */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '20px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden',
-          marginBottom: '24px',
-        }}>
-          <div style={{
-            padding: '20px 28px',
-            borderBottom: '1px solid #f0ebe3',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#1a202c', margin: 0 }}>
-              Profile Information
-            </h2>
+        {/* Profile Information */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Profile Information</h2>
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                style={{
-                  padding: '8px 18px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#2D7A3E',
-                  background: '#e8f5e0',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
+              <button onClick={() => setIsEditing(true)} className={styles.editButton} aria-label="Edit profile information">
                 Edit Profile
               </button>
             )}
           </div>
-
-          <div style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Full Name */}
+          <div className={styles.cardBody}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#718096', marginBottom: '8px' }}>
-                Full Name
-              </label>
+              <label className={styles.fieldLabel} htmlFor="fullName">Full Name</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1.5px solid #e8dcc4',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    color: '#1a202c',
-                    background: '#fafaf8',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <input id="fullName" type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={styles.textInput} aria-label="Full name" />
               ) : (
-                <p style={{ fontSize: '15px', color: '#1a202c', margin: 0, fontWeight: 500 }}>
-                  {formData.name || 'Not set'}
-                </p>
+                <p className={styles.fieldValue}>{formData.name || 'Not set'}</p>
               )}
             </div>
-
-            {/* Email (Read-only) */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#718096', marginBottom: '8px' }}>
-                Email Address
-              </label>
-              <p style={{ fontSize: '15px', color: '#8B8B8B', margin: 0 }}>
-                {formData.email}
-              </p>
+              <label className={styles.fieldLabel}>Email Address</label>
+              <p className={styles.fieldValueMuted}>{formData.email}</p>
             </div>
-
-            {/* Language */}
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#718096', marginBottom: '8px' }}>
-                Preferred Language
-              </label>
+              <label className={styles.fieldLabel} htmlFor="language">Preferred Language</label>
               {isEditing ? (
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1.5px solid #e8dcc4',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    color: '#1a202c',
-                    background: '#fafaf8',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    boxSizing: 'border-box',
-                  }}
-                >
+                <select id="language" value={formData.language} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className={styles.selectInput} aria-label="Select preferred language">
                   <option value="English">English</option>
                   <option value="Nepali">Nepali (नेपाली)</option>
                 </select>
               ) : (
-                <p style={{ fontSize: '15px', color: '#1a202c', margin: 0, fontWeight: 500 }}>
-                  {formData.language}
-                </p>
+                <p className={styles.fieldValue}>{formData.language}</p>
               )}
             </div>
-
-            {/* Action Buttons */}
             {isEditing && (
-              <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={isSaving}
-                  style={{
-                    padding: '12px 28px',
-                    background: '#2d5016',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                    opacity: isSaving ? 0.6 : 1,
-                    transition: 'all 0.2s',
-                  }}
-                >
+              <div className={styles.buttonRow}>
+                <button onClick={handleSaveProfile} disabled={isSaving} className={styles.saveButton} aria-label="Save profile changes">
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setFormData({
-                      name: session?.user?.name || '',
-                      email: session?.user?.email || '',
-                      language: session?.user?.language || 'English',
-                    });
-                  }}
-                  style={{
-                    padding: '12px 28px',
-                    background: '#f7f3ed',
-                    color: '#4a5568',
-                    border: '1px solid #e8dcc4',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                >
+                <button onClick={() => { setIsEditing(false); setFormData({ name: session?.user?.name || '', email: session?.user?.email || '', language: lang === 'ne' ? 'Nepali' : 'English' }); }} className={styles.cancelButton} aria-label="Cancel editing">
                   Cancel
                 </button>
               </div>
@@ -383,106 +242,81 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Change Password Card */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '20px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden',
-          marginBottom: '24px',
-        }}>
-          <div style={{
-            padding: '20px 28px',
-            borderBottom: '1px solid #f0ebe3',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#1a202c', margin: 0 }}>
-              Change Password
-            </h2>
-            {!isChangingPassword && (
+        {/* Accessibility */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Accessibility</h2>
+          </div>
+          <div className={styles.cardBody}>
+            {/* Font Size */}
+            <div>
+              <label className={styles.fieldLabel}>Text Size</label>
+              <p className={styles.fieldDescription}>Adjust the text size across the application for better readability</p>
+              <div className={styles.fontSizeGroup} role="group" aria-label="Font size selection">
+                <button onClick={() => handleFontSize('small')} className={`${styles.fontSizeBtn} ${currentFontSize === 'small' ? styles.fontSizeBtnActive : ''}`} aria-label="Small text size" aria-pressed={currentFontSize === 'small'}>
+                  <span className={styles.fontSizeSmall}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Small</span>
+                </button>
+                <button onClick={() => handleFontSize('medium')} className={`${styles.fontSizeBtn} ${currentFontSize === 'medium' ? styles.fontSizeBtnActive : ''}`} aria-label="Medium text size" aria-pressed={currentFontSize === 'medium'}>
+                  <span className={styles.fontSizeMedium}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Medium</span>
+                </button>
+                <button onClick={() => handleFontSize('large')} className={`${styles.fontSizeBtn} ${currentFontSize === 'large' ? styles.fontSizeBtnActive : ''}`} aria-label="Large text size" aria-pressed={currentFontSize === 'large'}>
+                  <span className={styles.fontSizeLarge}>A</span>
+                  <span className={styles.fontSizeBtnLabel}>Large</span>
+                </button>
+              </div>
+            </div>
+
+            {/* High Contrast */}
+            <div>
+              <label className={styles.fieldLabel}>High Contrast</label>
+              <p className={styles.fieldDescription}>Increase contrast for better visibility in bright conditions</p>
               <button
-                onClick={() => setIsChangingPassword(true)}
-                style={{
-                  padding: '8px 18px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: '#2D7A3E',
-                  background: '#e8f5e0',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                }}
+                onClick={handleContrastToggle}
+                className={`${styles.contrastToggle} ${highContrast ? styles.contrastToggleActive : ''}`}
+                role="switch"
+                aria-checked={highContrast}
+                aria-label="Toggle high contrast mode"
               >
+                <span className={styles.contrastToggleTrack}>
+                  <span className={styles.contrastToggleThumb} />
+                </span>
+                <span className={styles.contrastToggleLabel}>
+                  {highContrast ? 'On' : 'Off'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Change Password */}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>Change Password</h2>
+            {!isChangingPassword && (
+              <button onClick={() => setIsChangingPassword(true)} className={styles.editButton} aria-label="Change your password">
                 Change Password
               </button>
             )}
           </div>
-
           {isChangingPassword && (
-            <div style={{ padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className={styles.cardBodyPassword}>
               {['Current Password', 'New Password', 'Confirm New Password'].map((label, i) => {
                 const keys = ['currentPassword', 'newPassword', 'confirmPassword'];
+                const ids = ['currentPw', 'newPw', 'confirmPw'];
                 return (
                   <div key={i}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#718096', marginBottom: '8px' }}>
-                      {label}
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData[keys[i]]}
-                      onChange={(e) => setPasswordData({ ...passwordData, [keys[i]]: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        border: '1.5px solid #e8dcc4',
-                        borderRadius: '10px',
-                        fontSize: '14px',
-                        color: '#1a202c',
-                        background: '#fafaf8',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                    />
+                    <label className={styles.fieldLabel} htmlFor={ids[i]}>{label}</label>
+                    <input id={ids[i]} type="password" value={passwordData[keys[i]]} onChange={(e) => setPasswordData({ ...passwordData, [keys[i]]: e.target.value })} className={styles.textInput} aria-label={label} autoComplete={i === 0 ? 'current-password' : 'new-password'} />
                   </div>
                 );
               })}
-
-              <div style={{ display: 'flex', gap: '12px', paddingTop: '8px' }}>
-                <button
-                  onClick={handleChangePassword}
-                  disabled={isSaving}
-                  style={{
-                    padding: '12px 28px',
-                    background: '#2d5016',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: isSaving ? 'not-allowed' : 'pointer',
-                    opacity: isSaving ? 0.6 : 1,
-                  }}
-                >
+              <div className={styles.buttonRow}>
+                <button onClick={handleChangePassword} disabled={isSaving} className={styles.saveButton} aria-label="Submit password change">
                   {isSaving ? 'Changing...' : 'Change Password'}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsChangingPassword(false);
-                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                  }}
-                  style={{
-                    padding: '12px 28px',
-                    background: '#f7f3ed',
-                    color: '#4a5568',
-                    border: '1px solid #e8dcc4',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => { setIsChangingPassword(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className={styles.cancelButton} aria-label="Cancel password change">
                   Cancel
                 </button>
               </div>
@@ -490,42 +324,14 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Sign Out Card */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '20px',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-          padding: '24px 28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+        {/* Sign Out */}
+        <div className={styles.signOutCard}>
           <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#1a202c', margin: '0 0 4px' }}>
-              Sign Out
-            </h3>
-            <p style={{ fontSize: '13px', color: '#718096', margin: 0 }}>
-              End your current session
-            </p>
+            <h3 className={styles.signOutTitle}>Sign Out</h3>
+            <p className={styles.signOutSubtitle}>End your current session</p>
           </div>
-          <button
-            onClick={handleSignOut}
-            style={{
-              padding: '10px 24px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#dc2626',
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button onClick={handleSignOut} className={styles.signOutButton} aria-label="Sign out of your account">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>

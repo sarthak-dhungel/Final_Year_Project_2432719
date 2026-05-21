@@ -3,11 +3,13 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthGuard } from '@/lib/useAuthGuard';
+import { useLanguage } from '@/lib/LanguageContext';
 import styles from './disease-detection.module.css';
 
 export default function DiseaseDetectionPage() {
   const router = useRouter();
   const { session, status } = useAuthGuard();
+  const { t } = useLanguage();
 
   const fileInputRef = useRef(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -193,15 +195,15 @@ export default function DiseaseDetectionPage() {
     <div className={styles.pageContainer}>
       <main className={styles.mainContent}>
         <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Disease Detection</h1>
-          <p className={styles.pageSubtitle}>Upload a leaf image for AI-powered disease analysis</p>
+          <h1 className={styles.pageTitle}>{t('disease_detection')}</h1>
+          <p className={styles.pageSubtitle}>{t('upload_subtitle')}</p>
         </div>
 
         <div className={styles.contentGrid}>
           {/* Left Column - Upload */}
           <div className={styles.uploadCard}>
-            <h2 className={styles.cardTitle}>Upload Leaf Image</h2>
-            <p className={styles.cardSubtitle}>Drag and drop or click to browse</p>
+            <h2 className={styles.cardTitle}>{t('upload_leaf')}</h2>
+            <p className={styles.cardSubtitle}>{t('drag_drop')}</p>
 
             <div
               className={`${styles.dropZone} ${dragActive ? styles.dragActive : ''}`}
@@ -219,7 +221,7 @@ export default function DiseaseDetectionPage() {
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                   <p className={styles.dropText}>Drop your image here, or <span className={styles.browseLink}>browse</span></p>
-                  <p className={styles.supportText}>Supports: JPG, PNG, HEIC (Max 10MB)</p>
+                  <p className={styles.supportText}>{t('supports')}</p>
                 </>
               ) : (
                 <div className={styles.imagePreviewContainer}>
@@ -244,7 +246,7 @@ export default function DiseaseDetectionPage() {
 
             {imagePreview && (
               <>
-                <p className={styles.uploadedLabel}>Leaf image ready</p>
+                <p className={styles.uploadedLabel}>{t('leaf_ready')}</p>
                 <button onClick={handleStartScan} className={styles.scanButton} disabled={isScanning}>
                   {isScanning ? (
                     <>
@@ -252,14 +254,14 @@ export default function DiseaseDetectionPage() {
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
                         <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" fill="none" />
                       </svg>
-                      Scanning...
+                      {t('scanning')}
                     </>
                   ) : (
                     <>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
                       </svg>
-                      Start AI Scan
+                      {t('start_scan')}
                     </>
                   )}
                 </button>
@@ -269,9 +271,9 @@ export default function DiseaseDetectionPage() {
 
           {/* Right Column - Results */}
           <div className={styles.resultsCard}>
-            <h2 className={styles.cardTitle}>Analysis Results</h2>
+            <h2 className={styles.cardTitle}>{t('analysis_results')}</h2>
             <p className={styles.cardSubtitle}>
-              {scanResults ? 'Scan complete' : 'Upload and scan a leaf to view results'}
+              {scanResults ? t('scan_complete') : t('upload_scan')}
             </p>
 
             {!scanResults ? (
@@ -282,7 +284,7 @@ export default function DiseaseDetectionPage() {
                   <rect x="14" y="14" width="7" height="7" rx="1" />
                   <rect x="3" y="14" width="7" height="7" rx="1" />
                 </svg>
-                <p className={styles.emptyText}>Upload and scan a leaf to view results</p>
+                <p className={styles.emptyText}>{t('upload_scan')}</p>
               </div>
             ) : scanResults.error ? (
               <div className={styles.errorBox}>
@@ -295,12 +297,12 @@ export default function DiseaseDetectionPage() {
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <h3 className={styles.rejectionTitle}>Not a Valid Leaf Image</h3>
+                <h3 className={styles.rejectionTitle}>{t('not_valid_leaf')}</h3>
                 <p className={styles.rejectionMessage}>
                   {scanResults.message || 'The uploaded image does not appear to be a plant leaf. Please upload a clear, close-up photo of a diseased leaf for accurate diagnosis.'}
                 </p>
                 <button onClick={handleReset} className={`${styles.scanButton} ${styles.retryButton}`}>
-                  Try Again
+                  {t('try_again')}
                 </button>
               </div>
             ) : (
@@ -309,7 +311,7 @@ export default function DiseaseDetectionPage() {
                   <>
                     {/* Disease name */}
                     <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>Detected Disease</span>
+                      <span className={styles.resultLabel}>{t('detected_disease')}</span>
                       <h3 className={styles.resultValue}>
                         {remedy?.name || topPrediction.label?.replace(/___/g, ' - ').replace(/_/g, ' ')}
                       </h3>
@@ -320,7 +322,7 @@ export default function DiseaseDetectionPage() {
 
                     {/* Confidence */}
                     <div className={styles.resultItem}>
-                      <span className={styles.resultLabel}>Confidence Score</span>
+                      <span className={styles.resultLabel}>{t('confidence_score')}</span>
                       <div className={styles.confidenceBar}>
                         <div
                           className={styles.confidenceFill}
@@ -334,7 +336,7 @@ export default function DiseaseDetectionPage() {
                     {/* Severity */}
                     {remedy?.severity && (
                       <div className={styles.resultItem}>
-                        <span className={styles.resultLabel}>Severity Level</span>
+                        <span className={styles.resultLabel}>{t('severity_level')}</span>
                         <span className={`${styles.severityBadge} ${styles[remedy.severity]}`}>
                           {remedy.severity}
                         </span>
@@ -344,7 +346,7 @@ export default function DiseaseDetectionPage() {
                     {/* Other Possibilities */}
                     {scanResults.predictions?.length > 1 && (
                       <div className={styles.resultItem}>
-                        <span className={styles.resultLabel}>Other Possibilities</span>
+                        <span className={styles.resultLabel}>{t('other_possibilities')}</span>
                         <div className={styles.otherPredictions}>
                           {scanResults.predictions.slice(1).map((pred, i) => (
                             <div key={i} className={styles.predictionRow}>
@@ -362,10 +364,10 @@ export default function DiseaseDetectionPage() {
                     <div className={styles.tabsWrapper}>
                       <div className={styles.tabsHeader}>
                         {[
-                          { key: 'symptoms',   label: 'Symptoms' },
-                          { key: 'organic',    label: 'Organic' },
-                          { key: 'chemical',   label: 'Chemical' },
-                          { key: 'prevention', label: 'Prevention' },
+                          { key: 'symptoms',   label: t('symptoms') },
+                          { key: 'organic',    label: t('organic') },
+                          { key: 'chemical',   label: t('chemical') },
+                          { key: 'prevention', label: t('prevention') },
                         ].map(tab => (
                           <button
                             key={tab.key}
@@ -385,7 +387,7 @@ export default function DiseaseDetectionPage() {
 
                 <div className={styles.actionButtons}>
                   <button onClick={handleReset} className={styles.secondaryButton}>
-                    Scan Another Leaf
+                    {t('scan_another')}
                   </button>
                   <button onClick={handlePrintReport} className={styles.primaryButton}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -393,7 +395,7 @@ export default function DiseaseDetectionPage() {
                       <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                       <rect x="6" y="14" width="12" height="8" />
                     </svg>
-                    Print Report
+                    {t('print_report')}
                   </button>
                 </div>
               </div>
@@ -409,8 +411,8 @@ export default function DiseaseDetectionPage() {
                 <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>AI-Powered Analysis</h3>
-            <p className={styles.featureDescription}>EfficientNet-B3 CNN trained on 54,000+ crop disease images with 99.8% accuracy</p>
+            <h3 className={styles.featureTitle}>{t('ai_powered')}</h3>
+            <p className={styles.featureDescription}>{t('ai_powered_desc')}</p>
           </div>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
@@ -419,8 +421,8 @@ export default function DiseaseDetectionPage() {
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>38 Disease Classes</h3>
-            <p className={styles.featureDescription}>Covers major crops including tomato, potato, grape, corn, apple, and more</p>
+            <h3 className={styles.featureTitle}>{t('disease_classes')}</h3>
+            <p className={styles.featureDescription}>{t('disease_classes_desc')}</p>
           </div>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
@@ -428,8 +430,8 @@ export default function DiseaseDetectionPage() {
                 <path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>Nepal-Specific Remedies</h3>
-            <p className={styles.featureDescription}>Organic, chemical, and traditional treatments with Nepali translations</p>
+            <h3 className={styles.featureTitle}>{t('nepal_remedies')}</h3>
+            <p className={styles.featureDescription}>{t('nepal_remedies_desc')}</p>
           </div>
         </div>
       </main>

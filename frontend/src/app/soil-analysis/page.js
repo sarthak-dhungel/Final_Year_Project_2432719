@@ -1,21 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/LanguageContext';
 import styles from './soil-analysis.module.css';
 
 export default function SoilAnalysisPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [ph, setPh] = useState(6.5);
   const [nitrogen, setNitrogen] = useState(68);
   const [phosphorus, setPhosphorus] = useState(45);
   const [potassium, setPotassium] = useState(52);
   const [moisture, setMoisture] = useState(50);
+  const [temperature, setTemperature] = useState(25);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState('');
+  const [liveData, setLiveData] = useState(null);
+  const [isLive, setIsLive] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  useEffect(() => {
+    if (!isLive) return;
+    const fetchLive = async () => {
+      try {
+        const res = await fetch(`${API_URL}/soil/latest`);
+        const data = await res.json();
+        if (data.data) {
+          setPh(data.data.ph || 6.5);
+          setNitrogen(data.data.nitrogen || 0);
+          setPhosphorus(data.data.phosphorus || 0);
+          setPotassium(data.data.potassium || 0);
+          setMoisture(data.data.moisture || 0);
+          setTemperature(data.data.temperature || 0);
+          setLiveData(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch live data:', err);
+      }
+    };
+    fetchLive();
+    const interval = setInterval(fetchLive, 3000);
+    return () => clearInterval(interval);
+  }, [isLive]);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -57,17 +86,38 @@ export default function SoilAnalysisPage() {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>Soil Analysis</h1>
-        <p className={styles.subtitle}>Input your soil parameters for AI-powered crop recommendations</p>
+        <h1 className={styles.title}>{t('soil_analysis')}</h1>
+        <p className={styles.subtitle}>{t('soil_subtitle')}</p>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '12px', alignItems: 'center' }}>
+          <button
+            onClick={() => setIsLive(!isLive)}
+            style={{
+              padding: '8px 20px',
+              background: isLive ? '#2d5016' : '#f3f4f6',
+              color: isLive ? 'white' : '#4a5568',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {isLive ? t('live_from_arduino') : t('connect_arduino')}
+          </button>
+          {liveData && isLive && (
+            <span style={{ fontSize: '12px', color: '#718096' }}>
+              Temp: {liveData.temperature}°C | EC: {liveData.ec} us/cm
+            </span>
+          )}
+        </div>
       </div>
 
       <div className={styles.content}>
-        {/* Left Column - Input Parameters */}
         <div className={styles.parametersCard}>
-          <h2 className={styles.cardTitle}>Soil Parameters</h2>
-          <p className={styles.cardSubtitle}>Enter your soil test results</p>
+          <h2 className={styles.cardTitle}>{t('soil_parameters')}</h2>
+          <p className={styles.cardSubtitle}>{isLive ? t('live_sensor_data') : t('enter_results')}</p>
 
           {error && (
             <div className={styles.error}>
@@ -92,11 +142,12 @@ export default function SoilAnalysisPage() {
               value={ph}
               onChange={(e) => setPh(parseFloat(e.target.value))}
               className={styles.slider}
+              disabled={isLive}
             />
             <div className={styles.sliderLabels}>
-              <span>Acidic (4)</span>
-              <span>Neutral (7)</span>
-              <span>Alkaline (9)</span>
+              <span>{t('acidic_4')}</span>
+              <span>{t('neutral_7')}</span>
+              <span>{t('alkaline_9')}</span>
             </div>
           </div>
 
@@ -110,6 +161,7 @@ export default function SoilAnalysisPage() {
               value={nitrogen}
               onChange={(e) => setNitrogen(parseInt(e.target.value))}
               className={styles.slider}
+              disabled={isLive}
             />
           </div>
 
@@ -123,6 +175,7 @@ export default function SoilAnalysisPage() {
               value={phosphorus}
               onChange={(e) => setPhosphorus(parseInt(e.target.value))}
               className={styles.slider}
+              disabled={isLive}
             />
           </div>
 
@@ -136,6 +189,7 @@ export default function SoilAnalysisPage() {
               value={potassium}
               onChange={(e) => setPotassium(parseInt(e.target.value))}
               className={styles.slider}
+              disabled={isLive}
             />
           </div>
 
@@ -149,7 +203,28 @@ export default function SoilAnalysisPage() {
               value={moisture}
               onChange={(e) => setMoisture(parseInt(e.target.value))}
               className={styles.slider}
+              disabled={isLive}
             />
+          </div>
+
+          {/* Temperature */}
+          <div className={styles.parameterGroup}>
+            <label className={styles.label}>Temperature: {temperature}°C</label>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className={styles.slider}
+              disabled={isLive}
+            />
+            <div className={styles.sliderLabels}>
+              <span>{t('cold')}</span>
+              <span>{t('warm')}</span>
+              <span>{t('hot')}</span>
+            </div>
           </div>
 
           <button
@@ -163,41 +238,36 @@ export default function SoilAnalysisPage() {
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25" />
                   <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" fill="none" />
                 </svg>
-                Analyzing...
+                {t('analyzing')}
               </>
             ) : (
               <>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
-                Analyze Soil & Get Recommendations
+                {t('analyze_button')}
               </>
             )}
           </button>
         </div>
 
-        {/* Right Column - Visualizations */}
         <div className={styles.visualizationsCard}>
-          <h2 className={styles.cardTitle}>Soil Composition</h2>
-          <p className={styles.cardSubtitle}>Visual representation of your soil health</p>
+          <h2 className={styles.cardTitle}>{t('soil_composition')}</h2>
+          <p className={styles.cardSubtitle}>{t('visual_representation')}</p>
 
-          {/* Radar Chart */}
           <div className={styles.radarChart}>
             <svg viewBox="0 0 300 300" className={styles.radarSvg}>
-              {/* Grid circles */}
               <circle cx="150" cy="150" r="100" fill="none" stroke="#e5e7eb" strokeWidth="1" />
               <circle cx="150" cy="150" r="75" fill="none" stroke="#e5e7eb" strokeWidth="1" />
               <circle cx="150" cy="150" r="50" fill="none" stroke="#e5e7eb" strokeWidth="1" />
               <circle cx="150" cy="150" r="25" fill="none" stroke="#e5e7eb" strokeWidth="1" />
 
-              {/* Axes */}
               <line x1="150" y1="150" x2="150" y2="50" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="236" y2="100" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="236" y2="200" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="150" y2="250" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="64" y2="200" stroke="#e5e7eb" strokeWidth="1" />
 
-              {/* Data polygon */}
               <polygon
                 points={`
                   150,${150 - nitrogen},
@@ -211,7 +281,6 @@ export default function SoilAnalysisPage() {
                 strokeWidth="2"
               />
 
-              {/* Labels */}
               <text x="150" y="40" textAnchor="middle" fill="#6b7280" fontSize="12">Nitrogen</text>
               <text x="250" y="105" textAnchor="start" fill="#6b7280" fontSize="12">Phosphorus</text>
               <text x="250" y="205" textAnchor="start" fill="#6b7280" fontSize="12">Potassium</text>
@@ -220,9 +289,8 @@ export default function SoilAnalysisPage() {
             </svg>
           </div>
 
-          {/* NPK Bar Chart */}
           <div className={styles.npkChart}>
-            <h3 className={styles.chartTitle}>NPK Comparison</h3>
+            <h3 className={styles.chartTitle}>{t('npk_comparison')}</h3>
             <div className={styles.barChart}>
               <div className={styles.barGroup}>
                 <div className={styles.bars}>
@@ -263,29 +331,27 @@ export default function SoilAnalysisPage() {
             <div className={styles.legend}>
               <div className={styles.legendItem}>
                 <div className={styles.legendColor} style={{ backgroundColor: '#22c55e' }}></div>
-                <span>Your Soil</span>
+                <span>{t('your_soil')}</span>
               </div>
               <div className={styles.legendItem}>
                 <div className={styles.legendColor} style={{ backgroundColor: '#eab308' }}></div>
-                <span>Optimal</span>
+                <span>{t('optimal')}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Results Section */}
       {results && (
         <div className={styles.resultsSection}>
-          {/* Crop Recommendations */}
           <div className={styles.recommendationsCard}>
             <div className={styles.recommendationsHeader}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" />
               </svg>
               <div>
-                <h2 className={styles.resultsTitle}>Recommended Crops Based on Soil Analysis</h2>
-                <p className={styles.resultsSubtitle}>Crops best suited for your soil conditions</p>
+                <h2 className={styles.resultsTitle}>{t('recommended_crops')}</h2>
+                <p className={styles.resultsSubtitle}>{t('crops_suited')}</p>
               </div>
             </div>
 
@@ -300,13 +366,13 @@ export default function SoilAnalysisPage() {
                     </div>
                   </div>
                   <div className={styles.soilFit}>
-                    <span className={styles.fitLabel}>Soil Fit</span>
+                    <span className={styles.fitLabel}>{t('soil_fit')}</span>
                     <span className={styles.fitPercentage}>{crop.soil_fit}%</span>
                   </div>
                   <div className={styles.fitBar}>
                     <div
                       className={styles.fitBarFill}
-                      style={{ 
+                      style={{
                         width: `${crop.soil_fit}%`,
                         backgroundColor: crop.soil_fit >= 80 ? '#22c55e' : crop.soil_fit >= 60 ? '#eab308' : '#ef4444'
                       }}
@@ -317,7 +383,7 @@ export default function SoilAnalysisPage() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
-                      Highly Recommended
+                      {t('highly_recommended')}
                     </div>
                   )}
                 </div>
@@ -325,7 +391,6 @@ export default function SoilAnalysisPage() {
             </div>
           </div>
 
-          {/* Insights */}
           <div className={styles.insightsGrid}>
             {results.insights.map((insight, index) => (
               <div key={index} className={styles.insightCard}>
