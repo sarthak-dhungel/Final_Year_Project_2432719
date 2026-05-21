@@ -101,6 +101,17 @@ const translations = {
     ph_balance: "pH Balance",
     moisture_level: "Moisture Level",
     nutrient_status: "Nutrient Status",
+
+    // Navigation
+    nav_home: "Home",
+    nav_about: "About",
+    nav_disease: "Disease Detection",
+    nav_soil: "Soil Analysis",
+    nav_profile: "My Profile",
+    nav_signout: "Sign Out",
+    nav_navigation: "Navigation",
+    nav_account: "Account",
+    ai_model_active: "AI Model Active",
   },
 
   ne: {
@@ -205,6 +216,17 @@ const translations = {
     ph_balance: "pH सन्तुलन",
     moisture_level: "चिस्यान स्तर",
     nutrient_status: "पोषक तत्व स्थिति",
+
+    // Navigation
+    nav_home: "गृहपृष्ठ",
+    nav_about: "बारेमा",
+    nav_disease: "रोग पत्ता लगाउने",
+    nav_soil: "माटो विश्लेषण",
+    nav_profile: "मेरो प्रोफाइल",
+    nav_signout: "साइन आउट",
+    nav_navigation: "नेभिगेसन",
+    nav_account: "खाता",
+    ai_model_active: "AI मोडेल सक्रिय",
   }
 };
 

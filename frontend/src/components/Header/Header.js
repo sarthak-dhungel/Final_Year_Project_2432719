@@ -3,12 +3,14 @@
 import { useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { useLanguage } from '@/lib/LanguageContext';
 import Link from 'next/link';
 import styles from './Header.module.css';
 
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef(null);
 
@@ -16,24 +18,24 @@ export default function Header() {
   if (noHeaderPages.includes(pathname)) return null;
 
   const navLinks = [
-    { href: '/dashboard', label: 'Home', icon: (
+    { href: '/dashboard', label: t('nav_home'), icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         <polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
     )},
-    { href: '/about', label: 'About', icon: (
+    { href: '/about', label: t('nav_about'), icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4M12 8h.01"/>
       </svg>
     )},
-    { href: '/disease-detection', label: 'Disease Detection', icon: (
+    { href: '/disease-detection', label: t('nav_disease'), icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2m0 10v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
       </svg>
     )},
-    { href: '/soil-analysis', label: 'Soil Analysis', icon: (
+    { href: '/soil-analysis', label: t('nav_soil'), icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
       </svg>
@@ -154,7 +156,7 @@ export default function Header() {
         )}
 
         <nav className={styles.sidebarNav}>
-          <p className={styles.sidebarSectionLabel}>Navigation</p>
+          <p className={styles.sidebarSectionLabel}>{t('nav_navigation')}</p>
           {navLinks.map(link => (
             <Link
               key={link.href}
@@ -169,7 +171,7 @@ export default function Header() {
 
           <div className={styles.sidebarDivider} />
 
-          <p className={styles.sidebarSectionLabel}>Account</p>
+          <p className={styles.sidebarSectionLabel}>{t('nav_account')}</p>
           <Link
             href="/profile"
             className={`${styles.sidebarLink} ${pathname === '/profile' ? styles.sidebarLinkActive : ''}`}
@@ -181,7 +183,7 @@ export default function Header() {
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </span>
-            <span>My Profile</span>
+            <span>{t('nav_profile')}</span>
           </Link>
 
           <button className={styles.sidebarLogout} onClick={handleSignOut}>
@@ -192,14 +194,14 @@ export default function Header() {
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
             </span>
-            <span>Sign Out</span>
+            <span>{t('nav_signout')}</span>
           </button>
         </nav>
 
         <div className={styles.sidebarFooter}>
           <div className={styles.sidebarFooterBadge}>
             <span className={styles.sidebarFooterDot} />
-            <span>AI Model Active</span>
+            <span>{t('ai_model_active')}</span>
           </div>
         </div>
       </aside>
