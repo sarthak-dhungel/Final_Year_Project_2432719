@@ -13,21 +13,17 @@ export default function AdminPage() {
   const [adminKey, setAdminKey] = useState('');
   const [activeTab, setActiveTab] = useState('users');
 
-  // Users state
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Stats
   const [stats, setStats] = useState({ total_users: 0, total_diagnoses: 0, total_soil_reports: 0 });
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
+  const [modalMode, setModalMode] = useState('create');
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({ fullname: '', email: '', password: '', role: 'farmer' });
 
-  // Thresholds (kept from original)
   const [thresholds, setThresholds] = useState([
     { crop: 'Wheat', ph_min: 6.0, ph_max: 6.5, n_min: 60, n_max: 80, p_min: 40, p_max: 60, k_min: 40, k_max: 60 },
     { crop: 'Rice', ph_min: 5.5, ph_max: 6.5, n_min: 80, n_max: 120, p_min: 30, p_max: 50, k_min: 30, k_max: 50 },
@@ -48,7 +44,6 @@ export default function AdminPage() {
     'X-Admin-Key': ADMIN_SECRET_KEY
   };
 
-  // Fetch users
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
     setError('');
@@ -64,7 +59,6 @@ export default function AdminPage() {
     }
   }, []);
 
-  // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/admin/stats`, { headers: adminHeaders });
@@ -88,9 +82,10 @@ export default function AdminPage() {
     e.preventDefault();
     if (adminKey === ADMIN_SECRET_KEY) {
       setIsAuthenticated(true);
+      setError('');
       localStorage.setItem('krishi_admin_auth', ADMIN_SECRET_KEY);
     } else {
-      alert('Invalid admin key');
+      setError('Invalid admin key. Please try again.');
     }
   };
 
@@ -100,7 +95,6 @@ export default function AdminPage() {
     router.push('/');
   };
 
-  // Open create modal
   const openCreateModal = () => {
     setModalMode('create');
     setEditingUser(null);
@@ -108,7 +102,6 @@ export default function AdminPage() {
     setShowModal(true);
   };
 
-  // Open edit modal
   const openEditModal = (user) => {
     setModalMode('edit');
     setEditingUser(user);
@@ -116,7 +109,6 @@ export default function AdminPage() {
     setShowModal(true);
   };
 
-  // Create user
   const handleCreateUser = async () => {
     setError('');
     if (!formData.fullname || !formData.email || !formData.password) {
@@ -141,7 +133,6 @@ export default function AdminPage() {
     }
   };
 
-  // Update user
   const handleUpdateUser = async () => {
     setError('');
     const updateData = {};
@@ -166,7 +157,6 @@ export default function AdminPage() {
     }
   };
 
-  // Delete user
   const handleDeleteUser = async (userId, userName) => {
     if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
 
@@ -186,7 +176,6 @@ export default function AdminPage() {
     }
   };
 
-  // Threshold handlers (kept from original)
   const handleThresholdChange = (index, field, value) => {
     const updated = [...thresholds];
     updated[index][field] = parseFloat(value);
@@ -197,7 +186,6 @@ export default function AdminPage() {
     alert('Thresholds saved successfully! (Backend integration pending)');
   };
 
-  // ============ LOGIN SCREEN ============
   if (!isAuthenticated) {
     return (
       <div className={styles.loginContainer}>
@@ -209,12 +197,13 @@ export default function AdminPage() {
             <h1>Admin Access</h1>
             <p>Enter admin key to continue</p>
           </div>
+          {error && <div className={styles.error}>{error}</div>}
           <form onSubmit={handleAdminLogin} className={styles.loginForm}>
             <input
               type="password"
               placeholder="Admin Key"
               value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
+              onChange={(e) => { setAdminKey(e.target.value); setError(''); }}
               className={styles.keyInput}
               required
             />
@@ -228,7 +217,6 @@ export default function AdminPage() {
     );
   }
 
-  // ============ ADMIN DASHBOARD ============
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -244,7 +232,6 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Stats */}
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
           <p className={styles.statNumber}>{stats.total_users}</p>
@@ -260,7 +247,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
@@ -276,11 +262,9 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Error */}
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.content}>
-        {/* ============ USERS TAB ============ */}
         {activeTab === 'users' && (
           <div>
             <div className={styles.sectionHeader}>
@@ -342,7 +326,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ============ THRESHOLDS TAB ============ */}
         {activeTab === 'thresholds' && (
           <div className={styles.thresholdsSection}>
             <div className={styles.sectionHeader}>
@@ -391,7 +374,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* ============ CREATE/EDIT MODAL ============ */}
       {showModal && (
         <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
