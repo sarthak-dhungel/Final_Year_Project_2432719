@@ -75,8 +75,9 @@ export default function Header() {
             <Link href="/dashboard" className={styles.logo}>
               <div className={styles.logoIcon}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z" fill="white"/>
-                  <path d="M12 7L9 10H11V14H13V10H15L12 7Z" fill="#2D7A3E"/>
+                  <line x1="12" y1="22" x2="12" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M12 12 C8 8 2 6 1 2 C5 4 9 7 12 12Z" fill="white"/>
+                  <path d="M12 8 C16 4 22 2 23 -1 C19 1 15 4 12 8Z" fill="#7fb069"/>
                 </svg>
               </div>
               <span className={styles.logoText}>Krishi AI</span>
@@ -116,13 +117,11 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Overlay */}
       <div
         className={`${styles.overlay} ${sidebarOpen ? styles.overlayVisible : ''}`}
         onClick={closeSidebar}
       />
 
-      {/* Sidebar */}
       <aside
         ref={sidebarRef}
         className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}
@@ -131,8 +130,9 @@ export default function Header() {
           <div className={styles.sidebarLogoRow}>
             <div className={styles.logoIcon}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L4 6V12C4 16.5 7.5 20.5 12 22C16.5 20.5 20 16.5 20 12V6L12 2Z" fill="white"/>
-                <path d="M12 7L9 10H11V14H13V10H15L12 7Z" fill="#2D7A3E"/>
+                <line x1="12" y1="22" x2="12" y2="12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M12 12 C8 8 2 6 1 2 C5 4 9 7 12 12Z" fill="white"/>
+                <path d="M12 8 C16 4 22 2 23 -1 C19 1 15 4 12 8Z" fill="#7fb069"/>
               </svg>
             </div>
             <span className={styles.sidebarLogoText}>Krishi AI</span>
