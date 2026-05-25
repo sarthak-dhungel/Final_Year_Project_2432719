@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [weather, setWeather] = useState(null);
   const [soilData, setSoilData] = useState(null);
   const [soilHistory, setSoilHistory] = useState([]);
+  const [lastDiagnosis, setLastDiagnosis] = useState(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -67,6 +68,21 @@ export default function DashboardPage() {
     };
     fetchHistory();
   }, []);
+
+  useEffect(() => {
+    const fetchDiagnosis = async () => {
+      try {
+        const headers = {};
+        if (session?.user?.id) headers['X-User-Id'] = session.user.id;
+        const res = await fetch(`${API_URL}/api/ai/latest-diagnosis`, { headers });
+        const data = await res.json();
+        if (data.data) setLastDiagnosis(data.data);
+      } catch (err) {
+        console.error('Diagnosis fetch failed:', err);
+      }
+    };
+    if (session?.user) fetchDiagnosis();
+  }, [session]);
 
   function getWeatherDescription(code) {
     if (code === 0) return 'Clear sky';
@@ -137,6 +153,13 @@ export default function DashboardPage() {
   const chartHeight = 200;
   const chartPadding = 30;
 
+  const formatDisease = (name) => {
+    if (!name) return '--';
+    return name.replace(/___/g, ' - ').replace(/_/g, ' ');
+  };
+
+  const isHealthy = lastDiagnosis?.disease?.toLowerCase().includes('healthy');
+
   return (
     <div className={styles.dashboardContainer}>
       <main className={styles.mainContent}>
@@ -151,22 +174,31 @@ export default function DashboardPage() {
             <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <div>
-            <strong>{soilData && soilData.ph > 8 ? t('high_ph_detected') : t('possible_blight')}</strong>
-            <p>{soilData && soilData.ph > 8 ? `- ${t('high_ph_message')}` : `- ${t('check_disease')}`}</p>
+            <strong>{soilData && soilData.ph > 8 ? t('high_ph_detected') : lastDiagnosis ? formatDisease(lastDiagnosis.disease) : t('possible_blight')}</strong>
+            <p>{soilData && soilData.ph > 8 ? t('high_ph_message') : lastDiagnosis ? 'Check Disease Detection for details' : t('check_disease')}</p>
           </div>
         </div>
 
         <div className={styles.statsGrid}>
-          <div className={`${styles.statCard} ${styles.alertCard}`}>
+          <div className={`${styles.statCard} ${lastDiagnosis && !isHealthy ? styles.alertCard : ''}`}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>{t('disease_status')}</span>
-              <svg className={styles.warningIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
+              {isHealthy ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              ) : (
+                <svg className={styles.warningIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              )}
             </div>
-            <h2 className={styles.statValue}>{t('alert')}</h2>
-            <p className={styles.statDescription}>{t('leaf_blight_detected')}</p>
+            <h2 className={styles.statValue} style={isHealthy ? { color: '#10b981' } : undefined}>
+              {lastDiagnosis ? formatDisease(lastDiagnosis.disease) : '--'}
+            </h2>
+            <p className={styles.statDescription}>{lastDiagnosis ? (isHealthy ? 'No disease detected' : 'Disease detected') : 'No scans yet'}</p>
           </div>
 
           <div className={styles.statCard}>

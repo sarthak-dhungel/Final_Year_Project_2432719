@@ -119,3 +119,17 @@ async def predict(request: Request, file: UploadFile = File(...)):
         print(f"[WARN] Failed to save image to MongoDB: {db_err}")
 
     return JSONResponse({"predictions": results, "low_confidence": False})
+
+@router.get("/latest-diagnosis")
+async def get_latest_diagnosis(request: Request):
+    user_id = request.headers.get("X-User-Id", "anonymous")
+    diagnosis = await db.images.find_one(
+        {"userId": user_id},
+        sort=[("uploadedAt", -1)]
+    )
+    if not diagnosis:
+        return {"data": None}
+    diagnosis["_id"] = str(diagnosis["_id"])
+    # Remove the heavy base64 image data
+    diagnosis.pop("imageData", None)
+    return {"data": diagnosis}
