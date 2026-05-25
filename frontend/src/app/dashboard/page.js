@@ -50,24 +50,24 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchSoil = async () => {
       try {
-        const res = await fetch(`${API_URL}/soil/latest`);
+        const res = await fetch(`${API_URL}/soil/latest?userId=${session?.user?.id || ''}`);
         const data = await res.json();
         if (data.data) setSoilData(data.data);
       } catch (err) { console.error('Soil fetch failed:', err); }
     };
-    fetchSoil();
-  }, []);
+    if (session?.user) fetchSoil();
+  }, [session]);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${API_URL}/soil/history?limit=7`);
+        const res = await fetch(`${API_URL}/soil/history?limit=7&userId=${session?.user?.id || ''}`);
         const data = await res.json();
         if (data.readings && data.readings.length > 0) setSoilHistory(data.readings);
       } catch (err) { console.error('Soil history fetch failed:', err); }
     };
-    fetchHistory();
-  }, []);
+    if (session?.user) fetchHistory();
+  }, [session]);
 
   useEffect(() => {
     const fetchDiagnosis = async () => {
