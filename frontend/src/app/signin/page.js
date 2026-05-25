@@ -37,7 +37,6 @@ export default function SignInPage() {
     }
   }, [searchParams]);
 
-  // Admin shortcut
 // Admin shortcut
 useEffect(() => {
   const handleKeyDown = (e) => {
@@ -222,11 +221,6 @@ useEffect(() => {
               </svg>
             </button>
           </div>
-
-          {/* Admin Hint */}
-          <p className={styles.adminHint}>
-            Admin? Press F12
-          </p>
         </div>
       </div>
     </div>
