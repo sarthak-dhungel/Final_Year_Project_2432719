@@ -157,15 +157,14 @@ async def delete_user(user_id: str, admin_key: str = Header(alias="X-Admin-Key")
 
 
 # ============ STATS ============
-
 @router.get("/stats")
 async def get_stats(admin_key: str = Header(alias="X-Admin-Key")):
     """Get dashboard stats"""
     verify_admin(admin_key)
 
     total_users = await db.users.count_documents({})
-    total_diagnoses = await db.diagnoses.count_documents({}) if "diagnoses" in await db.list_collection_names() else 0
-    total_soil = await db.soil_reports.count_documents({}) if "soil_reports" in await db.list_collection_names() else 0
+    total_diagnoses = await db.images.count_documents({})
+    total_soil = await db.soil_readings.count_documents({})
 
     return {
         "total_users": total_users,
