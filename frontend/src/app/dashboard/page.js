@@ -169,18 +169,10 @@ export default function DashboardPage() {
         </div>
 
         <div className={styles.alertBanner}>
-          {lastDiagnosis && !isHealthy ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-          )}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
           <div>
             <strong>{soilData && soilData.ph > 8 ? t('high_ph_detected') : lastDiagnosis ? formatDisease(lastDiagnosis.disease) : t('possible_blight')}</strong>
             <p>{soilData && soilData.ph > 8 ? t('high_ph_message') : lastDiagnosis ? 'Check Disease Detection for details' : t('check_disease')}</p>
@@ -191,20 +183,19 @@ export default function DashboardPage() {
           <div className={`${styles.statCard} ${lastDiagnosis && !isHealthy ? styles.alertCard : ''}`}>
             <div className={styles.statHeader}>
               <span className={styles.statLabel}>{t('disease_status')}</span>
-              {lastDiagnosis && !isHealthy ? (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              ) : (
+              {isHealthy ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
+              ) : (
+                <svg className={styles.warningIcon} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
               )}
             </div>
-            <h2 className={styles.statValue} style={lastDiagnosis && !isHealthy ? { color: '#dc2626' } : { color: '#10b981' }}>
+            <h2 className={styles.statValue} style={isHealthy ? { color: '#10b981' } : undefined}>
               {lastDiagnosis ? formatDisease(lastDiagnosis.disease) : '--'}
             </h2>
             <p className={styles.statDescription}>{lastDiagnosis ? (isHealthy ? 'No disease detected' : 'Disease detected') : 'No scans yet'}</p>
