@@ -210,7 +210,6 @@ export default function AdminPage() {
             <button type="submit" className={styles.loginButton}>
               Access Admin Panel
             </button>
-            <p className={styles.hint}>Hint: Press F12 on signin page</p>
           </form>
         </div>
       </div>
