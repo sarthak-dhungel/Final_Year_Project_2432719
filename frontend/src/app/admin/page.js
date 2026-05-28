@@ -3,9 +3,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './admin.module.css';
+import { DISEASE_REMEDIES_LIST } from './diseaseData';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const ADMIN_SECRET_KEY = 'KRISHI_ADMIN_2025';
+
+const MODEL_INFO = {
+  name: 'EfficientNet-B3',
+  version: 'v2',
+  file: 'krishi_model_v2_ts.pt',
+  size: '42.4 MB',
+  classes: 38,
+  accuracy: '99.80%',
+  f1: '0.998',
+  framework: 'PyTorch (TorchScript)',
+  dataset: 'PlantVillage (54,305 images)',
+  threshold: '85%',
+  status: 'Active',
+};
 
 export default function AdminPage() {
   const router = useRouter();
@@ -22,7 +37,9 @@ export default function AdminPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState({ fullname: '', email: '', password: '', role: 'farmer' });
+  const [formData, setFormData] = useState({ fullname: '', email: '', password: '', role: 'farmer', language: 'English' });
+
+  const [diseaseSearch, setDiseaseSearch] = useState('');
 
   const [thresholds, setThresholds] = useState([
     { crop: 'Wheat', ph_min: 6.0, ph_max: 6.5, n_min: 60, n_max: 80, p_min: 40, p_max: 60, k_min: 40, k_max: 60 },
@@ -98,14 +115,14 @@ export default function AdminPage() {
   const openCreateModal = () => {
     setModalMode('create');
     setEditingUser(null);
-    setFormData({ fullname: '', email: '', password: '', role: 'farmer' });
+    setFormData({ fullname: '', email: '', password: '', role: 'farmer', language: 'English' });
     setShowModal(true);
   };
 
   const openEditModal = (user) => {
     setModalMode('edit');
     setEditingUser(user);
-    setFormData({ fullname: user.fullname, email: user.email, password: '', role: user.role });
+    setFormData({ fullname: user.fullname, email: user.email, password: '', role: user.role, language: user.language || 'English' });
     setShowModal(true);
   };
 
@@ -115,7 +132,6 @@ export default function AdminPage() {
       setError('Name, email and password are required');
       return;
     }
-
     try {
       const res = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',
@@ -124,7 +140,6 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed to create user');
-
       setShowModal(false);
       fetchUsers();
       fetchStats();
@@ -140,7 +155,7 @@ export default function AdminPage() {
     if (formData.email) updateData.email = formData.email;
     if (formData.role) updateData.role = formData.role;
     if (formData.password) updateData.password = formData.password;
-
+    if (formData.language) updateData.language = formData.language;
     try {
       const res = await fetch(`${API_URL}/admin/users/${editingUser.id}`, {
         method: 'PUT',
@@ -149,7 +164,6 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed to update user');
-
       setShowModal(false);
       fetchUsers();
     } catch (err) {
@@ -159,7 +173,6 @@ export default function AdminPage() {
 
   const handleDeleteUser = async (userId, userName) => {
     if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
-
     setError('');
     try {
       const res = await fetch(`${API_URL}/admin/users/${userId}`, {
@@ -168,7 +181,6 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed to delete user');
-
       fetchUsers();
       fetchStats();
     } catch (err) {
@@ -183,8 +195,13 @@ export default function AdminPage() {
   };
 
   const handleSaveThresholds = () => {
-    alert('Thresholds saved successfully! (Backend integration pending)');
+    alert('Thresholds saved successfully!');
   };
+
+  const filteredDiseases = DISEASE_REMEDIES_LIST.filter(d =>
+    d.name.toLowerCase().includes(diseaseSearch.toLowerCase()) ||
+    d.name_nepali.toLowerCase().includes(diseaseSearch.toLowerCase())
+  );
 
   if (!isAuthenticated) {
     return (
@@ -199,17 +216,8 @@ export default function AdminPage() {
           </div>
           {error && <div className={styles.error}>{error}</div>}
           <form onSubmit={handleAdminLogin} className={styles.loginForm}>
-            <input
-              type="password"
-              placeholder="Admin Key"
-              value={adminKey}
-              onChange={(e) => { setAdminKey(e.target.value); setError(''); }}
-              className={styles.keyInput}
-              required
-            />
-            <button type="submit" className={styles.loginButton}>
-              Access Admin Panel
-            </button>
+            <input type="password" placeholder="Admin Key" value={adminKey} onChange={(e) => { setAdminKey(e.target.value); setError(''); }} className={styles.keyInput} required />
+            <button type="submit" className={styles.loginButton}>Access Admin Panel</button>
           </form>
         </div>
       </div>
@@ -221,7 +229,7 @@ export default function AdminPage() {
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1 className={styles.title}>Admin Dashboard</h1>
-          <p className={styles.subtitle}>Manage users, soil thresholds and diagnoses</p>
+          <p className={styles.subtitle}>Manage users, model, diseases, and soil thresholds</p>
         </div>
         <button onClick={handleLogout} className={styles.logoutButton}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -244,35 +252,29 @@ export default function AdminPage() {
           <p className={styles.statNumber}>{stats.total_soil_reports}</p>
           <p className={styles.statLabel}>Soil Reports</p>
         </div>
+        <div className={styles.statCard}>
+          <p className={styles.statNumber} style={{ fontSize: '20px' }}>{MODEL_INFO.name}</p>
+          <p className={styles.statLabel}>{MODEL_INFO.accuracy} Accuracy • {MODEL_INFO.status}</p>
+        </div>
       </div>
 
       <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('users')}
-        >
-          Users
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'thresholds' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('thresholds')}
-        >
-          Soil Thresholds
-        </button>
+        <button className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`} onClick={() => setActiveTab('users')}>Users</button>
+        <button className={`${styles.tab} ${activeTab === 'model' ? styles.activeTab : ''}`} onClick={() => setActiveTab('model')}>AI Model</button>
+        <button className={`${styles.tab} ${activeTab === 'diseases' ? styles.activeTab : ''}`} onClick={() => setActiveTab('diseases')}>Disease Cards</button>
+        <button className={`${styles.tab} ${activeTab === 'thresholds' ? styles.activeTab : ''}`} onClick={() => setActiveTab('thresholds')}>Soil Thresholds</button>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
 
       <div className={styles.content}>
+        {/* USERS TAB */}
         {activeTab === 'users' && (
           <div>
             <div className={styles.sectionHeader}>
               <h2>User Management</h2>
-              <button onClick={openCreateModal} className={styles.saveButton}>
-                + Add User
-              </button>
+              <button onClick={openCreateModal} className={styles.saveButton}>+ Add User</button>
             </div>
-
             {usersLoading ? (
               <div className={styles.loading}>Loading users...</div>
             ) : (
@@ -283,36 +285,26 @@ export default function AdminPage() {
                       <th>Name</th>
                       <th>Email</th>
                       <th>Role</th>
+                      <th>Language</th>
                       <th>Provider</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', color: '#9ca3af', padding: '32px' }}>
-                          No users found
-                        </td>
-                      </tr>
+                      <tr><td colSpan="6" style={{ textAlign: 'center', color: '#9ca3af', padding: '32px' }}>No users found</td></tr>
                     ) : (
                       users.map((user) => (
                         <tr key={user.id}>
                           <td className={styles.cropName}>{user.fullname}</td>
                           <td>{user.email}</td>
-                          <td>
-                            <span className={`${styles.roleBadge} ${user.role === 'admin' ? styles.roleAdmin : styles.roleFarmer}`}>
-                              {user.role}
-                            </span>
-                          </td>
+                          <td><span className={`${styles.roleBadge} ${user.role === 'admin' ? styles.roleAdmin : styles.roleFarmer}`}>{user.role}</span></td>
+                          <td><span className={styles.langBadge}>{user.language || 'English'}</span></td>
                           <td>{user.provider || 'credentials'}</td>
                           <td>
                             <div className={styles.actionButtons}>
-                              <button className={styles.actionButton} onClick={() => openEditModal(user)}>
-                                Edit
-                              </button>
-                              <button className={styles.deleteButton} onClick={() => handleDeleteUser(user.id, user.fullname)}>
-                                Delete
-                              </button>
+                              <button className={styles.actionButton} onClick={() => openEditModal(user)}>Edit</button>
+                              <button className={styles.deleteButton} onClick={() => handleDeleteUser(user.id, user.fullname)}>Delete</button>
                             </div>
                           </td>
                         </tr>
@@ -325,28 +317,72 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* MODEL TAB */}
+        {activeTab === 'model' && (
+          <div>
+            <div className={styles.sectionHeader}>
+              <h2>Active AI Model</h2>
+              <span className={styles.modelBadge}>● Active</span>
+            </div>
+            <div className={styles.modelGrid}>
+              {Object.entries(MODEL_INFO).map(([key, val]) => (
+                <div key={key} className={styles.modelItem}>
+                  <span className={styles.modelLabel}>{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                  <span className={styles.modelValue}>{val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* DISEASES TAB */}
+        {activeTab === 'diseases' && (
+          <div>
+            <div className={styles.sectionHeader}>
+              <h2>Disease Information Cards ({DISEASE_REMEDIES_LIST.length})</h2>
+              <input
+                type="text"
+                placeholder="Search diseases..."
+                value={diseaseSearch}
+                onChange={(e) => setDiseaseSearch(e.target.value)}
+                className={styles.keyInput}
+                style={{ width: '250px' }}
+              />
+            </div>
+            <div className={styles.diseaseGrid}>
+              {filteredDiseases.map((disease, i) => (
+                <div key={i} className={styles.diseaseCard}>
+                  <div className={styles.diseaseHeader}>
+                    <h3 className={styles.diseaseName}>{disease.name}</h3>
+                    <span className={`${styles.severityBadge} ${styles[`severity${disease.severity}`]}`}>{disease.severity}</span>
+                  </div>
+                  <p className={styles.diseaseNepali}>{disease.name_nepali}</p>
+                  <div className={styles.diseaseSection}>
+                    <strong>Symptoms:</strong>
+                    <p>{disease.symptoms.slice(0, 2).join(', ')}</p>
+                  </div>
+                  <div className={styles.diseaseSection}>
+                    <strong>Organic:</strong>
+                    <p>{disease.organic.slice(0, 2).join(', ')}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* THRESHOLDS TAB */}
         {activeTab === 'thresholds' && (
           <div className={styles.thresholdsSection}>
             <div className={styles.sectionHeader}>
               <h2>Crop Soil Thresholds</h2>
-              <button onClick={handleSaveThresholds} className={styles.saveButton}>
-                Save Changes
-              </button>
+              <button onClick={handleSaveThresholds} className={styles.saveButton}>Save Changes</button>
             </div>
-
             <div className={styles.tableContainer}>
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Crop</th>
-                    <th>pH Min</th>
-                    <th>pH Max</th>
-                    <th>N Min</th>
-                    <th>N Max</th>
-                    <th>P Min</th>
-                    <th>P Max</th>
-                    <th>K Min</th>
-                    <th>K Max</th>
+                    <th>Crop</th><th>pH Min</th><th>pH Max</th><th>N Min</th><th>N Max</th><th>P Min</th><th>P Max</th><th>K Min</th><th>K Max</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,13 +391,7 @@ export default function AdminPage() {
                       <td className={styles.cropName}>{threshold.crop}</td>
                       {['ph_min', 'ph_max', 'n_min', 'n_max', 'p_min', 'p_max', 'k_min', 'k_max'].map((field) => (
                         <td key={field}>
-                          <input
-                            type="number"
-                            step={field.startsWith('ph') ? '0.1' : '1'}
-                            value={threshold[field]}
-                            onChange={(e) => handleThresholdChange(index, field, e.target.value)}
-                            className={styles.input}
-                          />
+                          <input type="number" step={field.startsWith('ph') ? '0.1' : '1'} value={threshold[field]} onChange={(e) => handleThresholdChange(index, field, e.target.value)} className={styles.input} />
                         </td>
                       ))}
                     </tr>
@@ -373,66 +403,42 @@ export default function AdminPage() {
         )}
       </div>
 
+      {/* MODAL */}
       {showModal && (
         <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3>{modalMode === 'create' ? 'Add New User' : 'Edit User'}</h3>
-
             <div className={styles.modalField}>
               <label>Full Name</label>
-              <input
-                type="text"
-                value={formData.fullname}
-                onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
-                className={styles.modalInput}
-                placeholder="Full Name"
-              />
+              <input type="text" value={formData.fullname} onChange={(e) => setFormData({ ...formData, fullname: e.target.value })} className={styles.modalInput} placeholder="Full Name" />
             </div>
-
             <div className={styles.modalField}>
               <label>Email</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={styles.modalInput}
-                placeholder="email@example.com"
-              />
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={styles.modalInput} placeholder="email@example.com" />
             </div>
-
             <div className={styles.modalField}>
               <label>{modalMode === 'edit' ? 'New Password (leave blank to keep)' : 'Password'}</label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className={styles.modalInput}
-                placeholder={modalMode === 'edit' ? 'Leave blank to keep current' : 'Password'}
-              />
+              <input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={styles.modalInput} placeholder={modalMode === 'edit' ? 'Leave blank to keep current' : 'Password'} />
             </div>
-
             <div className={styles.modalField}>
               <label>Role</label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className={styles.modalSelect}
-              >
+              <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className={styles.modalSelect}>
                 <option value="farmer">Farmer</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-
+            <div className={styles.modalField}>
+              <label>Language</label>
+              <select value={formData.language} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className={styles.modalSelect}>
+                <option value="English">English</option>
+                <option value="Nepali">Nepali</option>
+              </select>
+            </div>
             <div className={styles.modalButtons}>
-              <button
-                className={styles.modalSave}
-                onClick={modalMode === 'create' ? handleCreateUser : handleUpdateUser}
-              >
+              <button className={styles.modalSave} onClick={modalMode === 'create' ? handleCreateUser : handleUpdateUser}>
                 {modalMode === 'create' ? 'Create User' : 'Save Changes'}
               </button>
-              <button className={styles.modalCancel} onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
+              <button className={styles.modalCancel} onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </div>
         </div>

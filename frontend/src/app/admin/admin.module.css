@@ -533,3 +533,124 @@
     width: 60px;
   }
 }
+
+/* Stats row - 4 columns */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Language badge */
+.langBadge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Model tab */
+.modelGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.modelItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+}
+
+.modelLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modelValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d5016;
+}
+
+.modelBadge {
+  padding: 6px 14px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Disease cards */
+.diseaseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.diseaseCard {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.diseaseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.diseaseName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+}
+
+.diseaseNepali {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+}
+
+.diseaseSection {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.diseaseSection strong {
+  color: #2d5016;
+}
+
+.diseaseSection p {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.severityBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.severitynone { background: #dcfce7; color: #166534; }
+.severitylow { background: #fef3c7; color: #92400e; }
+.severitymoderate { background: #fed7aa; color: #9a3412; }
+.severityhigh { background: #fecaca; color: #dc2626; }
+.severitycritical { background: #dc2626; color: white; }
