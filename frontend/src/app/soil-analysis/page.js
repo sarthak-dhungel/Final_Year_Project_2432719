@@ -28,7 +28,7 @@ export default function SoilAnalysisPage() {
     if (!isLive) return;
     const fetchLive = async () => {
       try {
-        const res = await fetch(`${API_URL}/soil/latest?userId=${session?.user?.id || ''}`);
+        const res = await fetch(`${API_URL}/soil/latest`);
         const data = await res.json();
         if (data.data) {
           setPh(data.data.ph || 6.5);
@@ -46,7 +46,7 @@ export default function SoilAnalysisPage() {
     fetchLive();
     const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
-  }, [isLive, session]);
+  }, [isLive]);
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -60,7 +60,7 @@ export default function SoilAnalysisPage() {
           'Content-Type': 'application/json',
           'X-User-Id': session?.user?.id || 'anonymous',
         },
-        body: JSON.stringify({ ph, nitrogen, phosphorus, potassium, moisture })
+        body: JSON.stringify({ ph, nitrogen, phosphorus, potassium, moisture, temperature })
       });
 
       const data = await response.json();
