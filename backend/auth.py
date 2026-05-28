@@ -22,7 +22,7 @@ async def register(user: RegisterSchema):
         "fullname": user.fullname,
         "email": user.email,
         "password": hashed_pass,
-        "role": user.role or "farmer"     #  FIXED ROLE
+        "role": user.role or "farmer"
     }
 
     result = await db.users.insert_one(new_user)
@@ -30,7 +30,7 @@ async def register(user: RegisterSchema):
     return {
         "message": "User registered successfully",
         "id": str(result.inserted_id),
-        "role": new_user["role"]          #  returned properly
+        "role": new_user["role"]
     }
 
 
@@ -49,20 +49,20 @@ async def login(credentials: LoginSchema):
         "message": "Login successful",
         "userId": str(user["_id"]),
         "fullname": user["fullname"],
-        "role": user["role"]              #  now visible
+        "role": user["role"]
     }
+
 @router.post("/oauth-login")
 async def oauth_login(user: OAuthLoginSchema):
     existing = await db.users.find_one({"email": user.email})
 
-    # If Google user logs in first time → create account
     if not existing:
         new_user = {
             "fullname": user.fullname,
             "email": user.email,
-            "password": None,            # OAuth users have no password
-            "provider": user.provider,   # "google"
-            "role": "farmer",             # default role
+            "password": None,
+            "provider": user.provider,
+            "role": "farmer",
             "created_at": datetime.utcnow()
         }
 
@@ -75,13 +75,13 @@ async def oauth_login(user: OAuthLoginSchema):
             "role": new_user["role"]
         }
 
-    # If user already exists
     return {
         "message": "OAuth login successful",
         "userId": str(existing["_id"]),
         "fullname": existing["fullname"],
         "role": existing["role"]
     }
+
 
 class ChangePasswordSchema(BaseModel):
     userId: str
@@ -105,8 +105,20 @@ async def change_password(data: ChangePasswordSchema):
     except:
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
-    if len(data.newPassword) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    if len(data.newPassword) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    if not any(c.isupper() for c in data.newPassword):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter")
+
+    if not any(c.islower() for c in data.newPassword):
+        raise HTTPException(status_code=400, detail="Password must contain at least one lowercase letter")
+
+    if not any(c.isdigit() for c in data.newPassword):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
+
+    if not any(c in "!@#$%^&*()_+-=[]{}|;:',.<>?/" for c in data.newPassword):
+        raise HTTPException(status_code=400, detail="Password must contain at least one special character (!@#$%^&*)")
 
     hashed = ph.hash(data.newPassword)
     await db.users.update_one({"_id": ObjectId(data.userId)}, {"$set": {"password": hashed}})
