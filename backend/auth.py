@@ -5,6 +5,7 @@ from argon2 import PasswordHasher
 from bson import ObjectId
 from schemas import OAuthLoginSchema
 from datetime import datetime
+from pydantic import BaseModel
 
 router = APIRouter()
 ph = PasswordHasher()
@@ -81,3 +82,33 @@ async def oauth_login(user: OAuthLoginSchema):
         "fullname": existing["fullname"],
         "role": existing["role"]
     }
+
+class ChangePasswordSchema(BaseModel):
+    userId: str
+    currentPassword: str
+    newPassword: str
+
+@router.post("/change-password")
+async def change_password(data: ChangePasswordSchema):
+    if not ObjectId.is_valid(data.userId):
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    user = await db.users.find_one({"_id": ObjectId(data.userId)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.get("password"):
+        raise HTTPException(status_code=400, detail="Google OAuth accounts cannot change password here")
+
+    try:
+        ph.verify(user["password"], data.currentPassword)
+    except:
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    if len(data.newPassword) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+
+    hashed = ph.hash(data.newPassword)
+    await db.users.update_one({"_id": ObjectId(data.userId)}, {"$set": {"password": hashed}})
+
+    return {"message": "Password changed successfully"}

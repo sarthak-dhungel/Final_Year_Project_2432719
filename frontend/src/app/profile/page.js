@@ -105,6 +105,18 @@ export default function ProfilePage() {
     setIsSaving(true);
     setMessage({ type: '', text: '' });
 
+    if (!passwordData.currentPassword) {
+      setMessage({ type: 'error', text: 'Current password is required' });
+      setIsSaving(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'New password must be at least 6 characters' });
+      setIsSaving(false);
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage({ type: 'error', text: 'Passwords do not match' });
       setIsSaving(false);
@@ -121,12 +133,12 @@ export default function ProfilePage() {
         }),
       });
 
+      const data = await response.json();
       if (response.ok) {
         setMessage({ type: 'success', text: 'Password changed successfully!' });
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setIsChangingPassword(false);
       } else {
-        const data = await response.json();
         setMessage({ type: 'error', text: data.detail || 'Failed to change password' });
       }
     } catch (error) {
@@ -220,14 +232,13 @@ export default function ProfilePage() {
             </div>
             <div>
               <label className={styles.fieldLabel} htmlFor="language">Preferred Language</label>
-              {isEditing ? (
-                <select id="language" value={formData.language} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className={styles.selectInput} aria-label="Select preferred language">
-                  <option value="English">English</option>
-                  <option value="Nepali">Nepali (नेपाली)</option>
-                </select>
-              ) : (
-                <p className={styles.fieldValue}>{formData.language}</p>
-              )}
+              <select id="language" value={formData.language} onChange={(e) => {
+                setFormData({ ...formData, language: e.target.value });
+                setLang(e.target.value === 'Nepali' ? 'ne' : 'en');
+              }} className={styles.selectInput} aria-label="Select preferred language">
+                <option value="English">English</option>
+                <option value="Nepali">Nepali (नेपाली)</option>
+              </select>
             </div>
             {isEditing && (
               <div className={styles.buttonRow}>
@@ -248,7 +259,6 @@ export default function ProfilePage() {
             <h2 className={styles.cardTitle}>Accessibility</h2>
           </div>
           <div className={styles.cardBody}>
-            {/* Font Size */}
             <div>
               <label className={styles.fieldLabel}>Text Size</label>
               <p className={styles.fieldDescription}>Adjust the text size across the application for better readability</p>
@@ -268,7 +278,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* High Contrast */}
             <div>
               <label className={styles.fieldLabel}>High Contrast</label>
               <p className={styles.fieldDescription}>Increase contrast for better visibility in bright conditions</p>
