@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useAuthGuard } from '@/lib/useAuthGuard';
 import styles from './soil-analysis.module.css';
 
 export default function SoilAnalysisPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { session } = useAuthGuard();
   const [ph, setPh] = useState(6.5);
   const [nitrogen, setNitrogen] = useState(68);
   const [phosphorus, setPhosphorus] = useState(45);
@@ -54,22 +56,15 @@ export default function SoilAnalysisPage() {
     try {
       const response = await fetch(`${API_URL}/soil/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ph,
-          nitrogen,
-          phosphorus,
-          potassium,
-          moisture
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': session?.user?.id || 'anonymous',
+        },
+        body: JSON.stringify({ ph, nitrogen, phosphorus, potassium, moisture, temperature })
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Analysis failed');
-      }
-
+      if (!response.ok) throw new Error(data.detail || 'Analysis failed');
       setResults(data);
     } catch (err) {
       setError(err.message || 'Failed to analyze soil');
@@ -128,22 +123,12 @@ export default function SoilAnalysisPage() {
             </div>
           )}
 
-          {/* pH Level */}
           <div className={styles.parameterGroup}>
             <div className={styles.parameterHeader}>
               <label className={styles.label}>pH Level: {ph}</label>
               <span className={styles.badge}>{getPhLabel(ph)}</span>
             </div>
-            <input
-              type="range"
-              min="4"
-              max="9"
-              step="0.1"
-              value={ph}
-              onChange={(e) => setPh(parseFloat(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="4" max="9" step="0.1" value={ph} onChange={(e) => setPh(parseFloat(e.target.value))} className={styles.slider} disabled={isLive} />
             <div className={styles.sliderLabels}>
               <span>{t('acidic_4')}</span>
               <span>{t('neutral_7')}</span>
@@ -151,75 +136,29 @@ export default function SoilAnalysisPage() {
             </div>
           </div>
 
-          {/* Nitrogen */}
           <div className={styles.parameterGroup}>
             <label className={styles.label}>Nitrogen (N): {nitrogen}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={nitrogen}
-              onChange={(e) => setNitrogen(parseInt(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="0" max="100" value={nitrogen} onChange={(e) => setNitrogen(parseInt(e.target.value))} className={styles.slider} disabled={isLive} />
           </div>
 
-          {/* Phosphorus */}
           <div className={styles.parameterGroup}>
             <label className={styles.label}>Phosphorus (P): {phosphorus}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={phosphorus}
-              onChange={(e) => setPhosphorus(parseInt(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="0" max="100" value={phosphorus} onChange={(e) => setPhosphorus(parseInt(e.target.value))} className={styles.slider} disabled={isLive} />
           </div>
 
-          {/* Potassium */}
           <div className={styles.parameterGroup}>
             <label className={styles.label}>Potassium (K): {potassium}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={potassium}
-              onChange={(e) => setPotassium(parseInt(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="0" max="100" value={potassium} onChange={(e) => setPotassium(parseInt(e.target.value))} className={styles.slider} disabled={isLive} />
           </div>
 
-          {/* Moisture */}
           <div className={styles.parameterGroup}>
             <label className={styles.label}>Soil Moisture: {moisture}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={moisture}
-              onChange={(e) => setMoisture(parseInt(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="0" max="100" value={moisture} onChange={(e) => setMoisture(parseInt(e.target.value))} className={styles.slider} disabled={isLive} />
           </div>
 
-          {/* Temperature */}
           <div className={styles.parameterGroup}>
             <label className={styles.label}>Temperature: {temperature}°C</label>
-            <input
-              type="range"
-              min="0"
-              max="50"
-              step="0.1"
-              value={temperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className={styles.slider}
-              disabled={isLive}
-            />
+            <input type="range" min="0" max="50" step="0.1" value={temperature} onChange={(e) => setTemperature(parseFloat(e.target.value))} className={styles.slider} disabled={isLive} />
             <div className={styles.sliderLabels}>
               <span>{t('cold')}</span>
               <span>{t('warm')}</span>
@@ -227,11 +166,7 @@ export default function SoilAnalysisPage() {
             </div>
           </div>
 
-          <button
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className={styles.analyzeButton}
-          >
+          <button onClick={handleAnalyze} disabled={isAnalyzing} className={styles.analyzeButton}>
             {isAnalyzing ? (
               <>
                 <svg className={styles.spinner} width="20" height="20" viewBox="0 0 24 24">
@@ -261,26 +196,15 @@ export default function SoilAnalysisPage() {
               <circle cx="150" cy="150" r="75" fill="none" stroke="#e5e7eb" strokeWidth="1" />
               <circle cx="150" cy="150" r="50" fill="none" stroke="#e5e7eb" strokeWidth="1" />
               <circle cx="150" cy="150" r="25" fill="none" stroke="#e5e7eb" strokeWidth="1" />
-
               <line x1="150" y1="150" x2="150" y2="50" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="236" y2="100" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="236" y2="200" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="150" y2="250" stroke="#e5e7eb" strokeWidth="1" />
               <line x1="150" y1="150" x2="64" y2="200" stroke="#e5e7eb" strokeWidth="1" />
-
               <polygon
-                points={`
-                  150,${150 - nitrogen},
-                  ${150 + phosphorus * 0.866},${150 - phosphorus * 0.5},
-                  ${150 + potassium * 0.866},${150 + potassium * 0.5},
-                  150,${150 + moisture},
-                  ${150 - ph * 10 * 0.866},${150 + ph * 10 * 0.5}
-                `}
-                fill="rgba(34, 197, 94, 0.3)"
-                stroke="#22c55e"
-                strokeWidth="2"
+                points={`150,${150 - nitrogen},${150 + phosphorus * 0.866},${150 - phosphorus * 0.5},${150 + potassium * 0.866},${150 + potassium * 0.5},150,${150 + moisture},${150 - ph * 10 * 0.866},${150 + ph * 10 * 0.5}`}
+                fill="rgba(34, 197, 94, 0.3)" stroke="#22c55e" strokeWidth="2"
               />
-
               <text x="150" y="40" textAnchor="middle" fill="#6b7280" fontSize="12">Nitrogen</text>
               <text x="250" y="105" textAnchor="start" fill="#6b7280" fontSize="12">Phosphorus</text>
               <text x="250" y="205" textAnchor="start" fill="#6b7280" fontSize="12">Potassium</text>
@@ -292,41 +216,19 @@ export default function SoilAnalysisPage() {
           <div className={styles.npkChart}>
             <h3 className={styles.chartTitle}>{t('npk_comparison')}</h3>
             <div className={styles.barChart}>
-              <div className={styles.barGroup}>
-                <div className={styles.bars}>
-                  <div className={styles.bar} style={{ height: `${nitrogen}%`, backgroundColor: '#22c55e' }}>
-                    <span className={styles.barValue}>{nitrogen}</span>
+              {[{ label: 'N', val: nitrogen, opt: 70 }, { label: 'P', val: phosphorus, opt: 50 }, { label: 'K', val: potassium, opt: 55 }].map((item, i) => (
+                <div key={i} className={styles.barGroup}>
+                  <div className={styles.bars}>
+                    <div className={styles.bar} style={{ height: `${item.val}%`, backgroundColor: '#22c55e' }}>
+                      <span className={styles.barValue}>{item.val}</span>
+                    </div>
+                    <div className={styles.bar} style={{ height: `${item.opt}%`, backgroundColor: '#eab308' }}>
+                      <span className={styles.barValue}>{item.opt}</span>
+                    </div>
                   </div>
-                  <div className={styles.bar} style={{ height: '70%', backgroundColor: '#eab308' }}>
-                    <span className={styles.barValue}>70</span>
-                  </div>
+                  <span className={styles.barLabel}>{item.label}</span>
                 </div>
-                <span className={styles.barLabel}>N</span>
-              </div>
-
-              <div className={styles.barGroup}>
-                <div className={styles.bars}>
-                  <div className={styles.bar} style={{ height: `${phosphorus}%`, backgroundColor: '#22c55e' }}>
-                    <span className={styles.barValue}>{phosphorus}</span>
-                  </div>
-                  <div className={styles.bar} style={{ height: '50%', backgroundColor: '#eab308' }}>
-                    <span className={styles.barValue}>50</span>
-                  </div>
-                </div>
-                <span className={styles.barLabel}>P</span>
-              </div>
-
-              <div className={styles.barGroup}>
-                <div className={styles.bars}>
-                  <div className={styles.bar} style={{ height: `${potassium}%`, backgroundColor: '#22c55e' }}>
-                    <span className={styles.barValue}>{potassium}</span>
-                  </div>
-                  <div className={styles.bar} style={{ height: '55%', backgroundColor: '#eab308' }}>
-                    <span className={styles.barValue}>55</span>
-                  </div>
-                </div>
-                <span className={styles.barLabel}>K</span>
-              </div>
+              ))}
             </div>
             <div className={styles.legend}>
               <div className={styles.legendItem}>
@@ -354,7 +256,6 @@ export default function SoilAnalysisPage() {
                 <p className={styles.resultsSubtitle}>{t('crops_suited')}</p>
               </div>
             </div>
-
             <div className={styles.cropsGrid}>
               {results.recommendations.map((crop, index) => (
                 <div key={index} className={styles.cropCard}>
@@ -370,13 +271,7 @@ export default function SoilAnalysisPage() {
                     <span className={styles.fitPercentage}>{crop.soil_fit}%</span>
                   </div>
                   <div className={styles.fitBar}>
-                    <div
-                      className={styles.fitBarFill}
-                      style={{
-                        width: `${crop.soil_fit}%`,
-                        backgroundColor: crop.soil_fit >= 80 ? '#22c55e' : crop.soil_fit >= 60 ? '#eab308' : '#ef4444'
-                      }}
-                    ></div>
+                    <div className={styles.fitBarFill} style={{ width: `${crop.soil_fit}%`, backgroundColor: crop.soil_fit >= 80 ? '#22c55e' : crop.soil_fit >= 60 ? '#eab308' : '#ef4444' }}></div>
                   </div>
                   {crop.highly_recommended && (
                     <div className={styles.recommendedBadge}>
@@ -396,20 +291,13 @@ export default function SoilAnalysisPage() {
               <div key={index} className={styles.insightCard}>
                 <div className={styles.insightIcon}>
                   {insight.type === 'moisture' && (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>
                   )}
                   {insight.type === 'ph' && (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                   )}
                   {insight.type === 'nutrient' && (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" />
-                    </svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M8 6c-3 0-4 2-4 4s1 4 4 4 4-2 4-4-1-4-4-4zm8 0c3 0 4 2 4 4s-1 4-4 4-4-2-4-4 1-4 4-4z" /></svg>
                   )}
                 </div>
                 <div>
