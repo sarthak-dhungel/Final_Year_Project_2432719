@@ -13,6 +13,7 @@ class SoilAnalysisRequest(BaseModel):
     phosphorus: float
     potassium: float
     moisture: float
+    temperature: float = 25
 
 class CropRecommendation(BaseModel):
     name: str
@@ -73,7 +74,7 @@ async def analyze_soil(soil: SoilAnalysisRequest, request: Request) -> Dict:
     await db.soil_readings.insert_one({
         "userId": user_id,
         "moisture": soil.moisture,
-        "temperature": 0,
+        "temperature": soil.temperature,
         "ec": 0,
         "ph": soil.ph,
         "nitrogen": soil.nitrogen,
@@ -120,7 +121,7 @@ async def analyze_soil(soil: SoilAnalysisRequest, request: Request) -> Dict:
     return {
         "recommendations": recommendations[:6],
         "insights": insights,
-        "soil_parameters": {"ph": soil.ph, "nitrogen": soil.nitrogen, "phosphorus": soil.phosphorus, "potassium": soil.potassium, "moisture": soil.moisture}
+        "soil_parameters": {"ph": soil.ph, "nitrogen": soil.nitrogen, "phosphorus": soil.phosphorus, "potassium": soil.potassium, "moisture": soil.moisture, "temperature": soil.temperature}
     }
 
 
